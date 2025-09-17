@@ -1,4 +1,4 @@
-```markdown
+
 # Product Requirements Document (PRD) - Inventarisku
 
 **Versi:** 1.0  
