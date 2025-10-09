@@ -8,7 +8,7 @@
   - [ ] Inisialisasi Git repository
 - [ ] **Manajemen Dependensi:**
   - [ ] Tambahkan dependensi utama ke `pubspec.yaml`  
-        (flutter, provider/riverpod, freezed, drift/hive/isar, go_router, logger, dll)
+        (flutter, flutter_bloc, bloc, equatable, freezed, drift/hive/isar, go_router, logger, dll)
 - [ ] **Struktur Proyek:**
   - [ ] Buat struktur direktori sesuai Clean Architecture (`app`, `core`, `features`, `shared`)
 - [ ] **Konfigurasi Database:**

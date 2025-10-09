@@ -63,7 +63,7 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 
 #### Presentation Layer
 *   Terdiri dari UI Flutter (pages, widgets).
-*   State management menggunakan Provider/Riverpod untuk memisahkan logika tampilan dari logika bisnis.
+*   State management menggunakan flutter_bloc untuk memisahkan logika tampilan dari logika bisnis.
 *   Meneruskan event dari pengguna ke Business Logic Layer.
 *   Menampilkan data yang diterima dari Business Logic Layer.
 
@@ -94,7 +94,7 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 
 **Komponen (Widgets):**
 *   Widget yang dapat digunakan kembali seperti `CustomButton`, `StyledListTile`, `ConfirmationDialog`.
-*   Provider/Notifier untuk mengelola state dari setiap fitur.
+*   Blocs/Cubits untuk mengelola state dari setiap fitur.
 
 ### 3.2 Business Logic Layer (Services)
 
@@ -201,7 +201,7 @@ Database menggunakan **Drift (SQLite)**.
 │   ├── presentation/
 │   │   ├── pages/               # Halaman-halaman UI
 │   │   ├── widgets/             # Widget yang dapat digunakan kembali
-│   │   └── providers/           # State management (Providers/Notifiers)
+│   │   └── blocs/           # State management (Blocs/Cubits)
 │   └── shared/                  # Widget atau kode yang digunakan di banyak tempat
 ├── pubspec.yaml
 ├── README.md
