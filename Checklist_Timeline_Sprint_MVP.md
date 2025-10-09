@@ -3,14 +3,14 @@
 #### Sprint 0: Fondasi & Penyiapan Proyek (Minggu 1-2)  
 *Tujuan: Menyiapkan kerangka kerja, arsitektur, dan alat pengembangan.*
 
-- [ ] **Inisialisasi Proyek:**
-  - [ ] Buat proyek Flutter baru
-  - [ ] Inisialisasi Git repository
-- [ ] **Manajemen Dependensi:**
-  - [ ] Tambahkan dependensi utama ke `pubspec.yaml`  
+- [x] **Inisialisasi Proyek:**
+  - [x] Buat proyek Flutter baru
+  - [x] Inisialisasi Git repository
+- [x] **Manajemen Dependensi:**
+  - [x] Tambahkan dependensi utama ke `pubspec.yaml`  
         (flutter, flutter_bloc, bloc, equatable, freezed, drift/hive/isar, go_router, logger, dll)
 - [ ] **Struktur Proyek:**
-  - [ ] Buat struktur direktori sesuai Clean Architecture (`app`, `core`, `features`, `shared`)
+  - [ ] Buat struktur direktori sesuai Layered Architecture (`app`, `core`, `data`, `domain`, `presentation`, `shared`)
 - [ ] **Konfigurasi Database:**
   - [ ] Buat file definisi database (`app_database.dart`)
   - [ ] Definisikan skema tabel `items` dan `transactions`

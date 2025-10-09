@@ -102,7 +102,7 @@ Inventarisku adalah aplikasi standalone yang berjalan di perangkat Android/iOS, 
 - **Performa:** aplikasi harus cepat & responsif (bahkan dengan ribuan item/transaksi).  
 - **Keamanan:** data hanya tersimpan lokal & tidak dapat diakses aplikasi lain.  
 - **Kompatibilitas:** Android (API min 24/Android 7.0+), iOS (13+).  
-- **Maintainability:** arsitektur clean code (presentation, domain, data).  
+- **Maintainability:** arsitektur berlapis (Layered Architecture).  
 - **Usability:** antarmuka intuitif, mudah digunakan tanpa pelatihan.  
 - **Portabilitas:** dapat berjalan di Android & iOS dengan minimal perubahan.  
 - **Reliabilitas:** database harus aman dari korupsi dengan mekanisme transaksi.  

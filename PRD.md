@@ -126,9 +126,9 @@ Lingkup awal (Minimum Viable Product - MVP) akan berfokus pada fungsionalitas in
 - **CSV/Excel**: `csv` & `excel` package.
 - **Share_plus**: berbagi file.
 
-### Clean Architecture
+### Layered Architecture
 - **Presentation Layer**: UI, state management.
-- **Domain Layer**: entities, use cases, repository interfaces.
+- **Business Logic Layer**: entities, use cases, repository interfaces.
 - **Data Layer**: implementasi repositori, database lokal.
 
 ---
