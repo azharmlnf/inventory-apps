@@ -133,7 +133,7 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 ### 3.4 Model
 
 *   **Item** → `id, name, description, qty, unit, price, imagePath, categoryId, minQty`.
-*   **Transaction** → `id, type (IN/OUT), date, partner, note, lines[]`.
+*   **Transaction** → `id, type (IN/OUT), date, partner, note, lines[], imagePath`.
 *   **TransactionLine** → `id, transactionId, itemId, qty, price, subtotal`.
 *   **Category** → `id, name, parentId`.
 *   **ActivityLog** → `id, timestamp, description, itemId, type`.
@@ -150,7 +150,7 @@ Database menggunakan **SQLite (sqflite)**.
 
 * **items** → menyimpan data barang.
 * **categories** → mengelompokkan barang.
-* **transactions** → menyimpan transaksi masuk/keluar.
+* **transactions** → menyimpan transaksi masuk/keluar, termasuk bukti pembayaran (opsional).
 * **transaction_lines** → detail barang per transaksi.
 * **stock_movements** → log perubahan stok.
 * **activity_logs** → menyimpan riwayat aktivitas pengguna.

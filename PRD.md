@@ -131,6 +131,7 @@ Lingkup produk ini mencakup fungsionalitas inti untuk manajemen inventaris (fitu
 - kuantitas (INTEGER, NOT NULL)
 - tanggal (DATETIME, NOT NULL)
 - catatan (TEXT)
+- image_path (TEXT, nullable) - Path gambar bukti pembayaran
 - created_at (DATETIME)
 
 ### Entitas: Riwayat Aktivitas (Activity Log)

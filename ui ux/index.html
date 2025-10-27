@@ -195,6 +195,39 @@
         </div>
     </div>
 
+    <!-- Modal Form Tambah/Edit Transaksi -->
+    <div id="modal-transaksi" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-transaksi-title">Tambah Transaksi Baru</h2>
+                <button id="btn-tutup-modal-transaksi" class="close-button" aria-label="Tutup">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-transaksi">
+                    <input type="hidden" id="transaksi-id">
+                    <div class="form-group">
+                        <label for="transaksi-tipe">Tipe Transaksi</label>
+                        <select id="transaksi-tipe" required>
+                            <option value="masuk">Masuk</option>
+                            <option value="keluar">Keluar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaksi-barang">Barang</label>
+                        <select id="transaksi-barang" required>
+                            <!-- Opsi barang akan di-generate oleh JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group"><label for="transaksi-jumlah">Jumlah</label><input type="number" id="transaksi-jumlah" required min="1"></div>
+                    <div class="form-group"><label for="transaksi-tanggal">Tanggal</label><input type="date" id="transaksi-tanggal" required></div>
+                    <div class="form-group"><label for="transaksi-catatan">Catatan</label><input type="text" id="transaksi-catatan"></div>
+                    <div class="form-group"><label for="transaksi-bukti-pembayaran">Bukti Pembayaran (URL/Path, Opsional)</label><input type="text" id="transaksi-bukti-pembayaran"></div>
+                    <button type="submit" class="action-button">Simpan Transaksi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

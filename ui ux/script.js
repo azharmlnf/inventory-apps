@@ -1,6 +1,7 @@
 /* FILE: script.js */
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Script started.");
 
     // --- DATA DUMMY & STATE APLIKASI ---
     let dataKategori = [
@@ -20,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     let dataTransaksi = [
-        { id: 'TRX001', tipe: 'masuk', barang_id: 'BRG001', jumlah: 50, tanggal: '2023-10-27', catatan: 'Pembelian dari Supplier A' },
-        { id: 'TRX002', tipe: 'keluar', barang_id: 'BRG002', jumlah: 20, tanggal: '2023-10-27', catatan: 'Penjualan ke Pelanggan B' },
-        { id: 'TRX003', tipe: 'keluar', barang_id: 'BRG001', jumlah: 15, tanggal: '2023-10-26', catatan: 'Penjualan ke Pelanggan C' },
-        { id: 'TRX004', tipe: 'masuk', barang_id: 'BRG003', jumlah: 5, tanggal: '2023-10-25', catatan: 'Pembelian dari Supplier B' },
+        { id: 'TRX001', tipe: 'masuk', barang_id: 'BRG001', jumlah: 50, tanggal: '2023-10-27', catatan: 'Pembelian dari Supplier A', image_path: '' },
+        { id: 'TRX002', tipe: 'keluar', barang_id: 'BRG002', jumlah: 20, tanggal: '2023-10-27', catatan: 'Penjualan ke Pelanggan B', image_path: '' },
+        { id: 'TRX003', tipe: 'keluar', barang_id: 'BRG001', jumlah: 15, tanggal: '2023-10-26', catatan: 'Penjualan ke Pelanggan C', image_path: '' },
+        { id: 'TRX004', tipe: 'masuk', barang_id: 'BRG003', jumlah: 5, tanggal: '2023-10-25', catatan: 'Pembelian dari Supplier B', image_path: '' },
     ];
 
     let dataActivityLog = [
@@ -41,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sidebar elements
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    const btnOpenSidebar = document.getElementById('btn-open-sidebar');
     const btnCloseSidebar = document.getElementById('btn-close-sidebar');
     const hamburgerIcons = document.querySelectorAll('.hamburger-icon'); // All hamburger icons
 
@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Transaksi
     const transaksiListContainer = document.getElementById('transaksi-list-container');
+    // const btnTambahTransaksi = document.getElementById('btn-tambah-transaksi'); // This element is created dynamically now
 
     // Riwayat Aktivitas
     const activityLogListContainer = document.getElementById('activity-log-list-container');
@@ -103,6 +104,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const kategoriIdInput = document.getElementById('kategori-id');
     const kategoriNamaInput = document.getElementById('kategori-nama');
 
+    // Modal Transaksi
+    const modalTransaksi = document.getElementById('modal-transaksi');
+    const modalTransaksiTitle = document.getElementById('modal-transaksi-title');
+    const btnTutupModalTransaksi = document.getElementById('btn-tutup-modal-transaksi');
+    const formTransaksi = document.getElementById('form-transaksi');
+    const transaksiIdInput = document.getElementById('transaksi-id');
+    const transaksiTipeSelect = document.getElementById('transaksi-tipe');
+    const transaksiBarangSelect = document.getElementById('transaksi-barang');
+    const transaksiJumlahInput = document.getElementById('transaksi-jumlah');
+    const transaksiTanggalInput = document.getElementById('transaksi-tanggal');
+    const transaksiCatatanInput = document.getElementById('transaksi-catatan');
+    const transaksiBuktiPembayaranInput = document.getElementById('transaksi-bukti-pembayaran');
+
     // --- HELPER FUNCTIONS ---
     function generateUniqueId(prefix) {
         return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -111,6 +125,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function getKategoriNama(id) {
         const kategori = dataKategori.find(cat => cat.id === id);
         return kategori ? kategori.nama : 'Tidak Berkategori';
+    }
+
+    function getBarangNama(id) {
+        const barang = dataBarang.find(item => item.id === id);
+        return barang ? barang.nama : 'Barang Tidak Ditemukan';
     }
 
     function recordActivity(description, itemId = null, type = 'OTHER') {
@@ -145,11 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- SIDEBAR FUNCTIONS ---
     function openSidebar() {
+        console.log('Opening sidebar...');
         sidebar.classList.add('open');
         overlay.classList.remove('hidden');
     }
 
     function closeSidebar() {
+        console.log('Closing sidebar...');
         sidebar.classList.remove('open');
         overlay.classList.add('hidden');
     }
@@ -306,6 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="transaksi-info">
                     <h4>${item ? item.nama : 'Barang Tidak Ditemukan'}</h4>
                     <p>${trx.tanggal} - ${trx.catatan}</p>
+                    ${trx.image_path ? `<img src="${trx.image_path}" alt="Bukti Pembayaran" style="max-width: 100px; max-height: 100px; margin-top: 5px;">` : ''}
                 </div>
                 <div class="transaksi-jumlah ${isMasuk ? 'masuk' : 'keluar'}">
                     ${isMasuk ? '+' : '-'}${trx.jumlah}
@@ -423,6 +445,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const tutupModalKategori = () => modalKategori.classList.add('hidden');
 
+    // --- FUNGSI MODAL TRANSAKSI ---
+    const bukaModalTransaksi = (transaksiId = null) => {
+        modalTransaksi.classList.remove('hidden');
+        formTransaksi.reset();
+        transaksiIdInput.value = '';
+        modalTransaksiTitle.textContent = 'Tambah Transaksi Baru';
+
+        // Populate barang select
+        transaksiBarangSelect.innerHTML = dataBarang.map(item => `<option value="${item.id}">${item.nama}</option>`).join('');
+        if (dataBarang.length === 0) {
+            transaksiBarangSelect.innerHTML = '<option value="">Tambahkan Barang Dulu</option>';
+            transaksiBarangSelect.disabled = true;
+        } else {
+            transaksiBarangSelect.disabled = false;
+        }
+
+        // Set default date to today
+        transaksiTanggalInput.value = new Date().toISOString().slice(0, 10);
+
+        if (transaksiId) {
+            // Edit Transaksi (not fully implemented in prototype, just for structure)
+            const trx = dataTransaksi.find(t => t.id === transaksiId);
+            if (trx) {
+                modalTransaksiTitle.textContent = 'Edit Transaksi';
+                transaksiIdInput.value = trx.id;
+                transaksiTipeSelect.value = trx.tipe;
+                transaksiBarangSelect.value = trx.barang_id;
+                transaksiJumlahInput.value = trx.jumlah;
+                transaksiTanggalInput.value = trx.tanggal;
+                transaksiCatatanInput.value = trx.catatan;
+                transaksiBuktiPembayaranInput.value = trx.image_path;
+            }
+        }
+    };
+
+    const tutupModalTransaksi = () => modalTransaksi.classList.add('hidden');
+
     // --- CRUD BARANG ---
     const simpanBarang = (e) => {
         e.preventDefault();
@@ -501,11 +560,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // --- CRUD TRANSAKSI ---
+    const simpanTransaksi = (e) => {
+        e.preventDefault();
+        const id = transaksiIdInput.value;
+        const tipe = transaksiTipeSelect.value;
+        const barang_id = transaksiBarangSelect.value;
+        const jumlah = parseInt(transaksiJumlahInput.value);
+        const tanggal = transaksiTanggalInput.value;
+        const catatan = transaksiCatatanInput.value;
+        const image_path = transaksiBuktiPembayaranInput.value;
+
+        if (!barang_id) {
+            alert('Pilih barang untuk transaksi.');
+            return;
+        }
+
+        const itemIndex = dataBarang.findIndex(item => item.id === barang_id);
+        if (itemIndex === -1) {
+            alert('Barang tidak ditemukan.');
+            return;
+        }
+
+        let activityDesc = '';
+        if (tipe === 'masuk') {
+            dataBarang[itemIndex].kuantitas += jumlah;
+            activityDesc = `Menambahkan ${jumlah} stok untuk ${getBarangNama(barang_id)} melalui transaksi masuk.`;
+        } else if (tipe === 'keluar') {
+            if (dataBarang[itemIndex].kuantitas < jumlah) {
+                alert('Stok tidak mencukupi untuk transaksi keluar ini.');
+                return;
+            }
+            dataBarang[itemIndex].kuantitas -= jumlah;
+            activityDesc = `Mengurangi ${jumlah} stok untuk ${getBarangNama(barang_id)} melalui transaksi keluar.`;
+        }
+
+        if (id) {
+            // Edit Transaksi (prototype only, actual logic more complex)
+            const index = dataTransaksi.findIndex(trx => trx.id === id);
+            if (index !== -1) {
+                dataTransaksi[index] = { id, tipe, barang_id, jumlah, tanggal, catatan, image_path };
+                recordActivity(`Mengedit transaksi untuk ${getBarangNama(barang_id)}.`, barang_id, 'EDIT_TRANSACTION');
+            }
+        } else {
+            // Tambah Transaksi
+            const newId = generateUniqueId('TRX');
+            dataTransaksi.unshift({ id: newId, tipe, barang_id, jumlah, tanggal, catatan, image_path }); // Add to beginning
+            recordActivity(activityDesc, barang_id, 'ADD_TRANSACTION');
+        }
+
+        tutupModalTransaksi();
+        tampilkanHalaman('transaksi');
+    };
+
     // --- EKSPOR/IMPOR DATA ---
     const eksporData = () => {
         const headerBarang = ['id', 'kode', 'nama', 'kuantitas', 'unit', 'harga', 'min_qty', 'kategori_id', 'gambar'];
         const headerKategori = ['id', 'nama'];
-        const headerTransaksi = ['id', 'tipe', 'barang_id', 'jumlah', 'tanggal', 'catatan'];
+        const headerTransaksi = ['id', 'tipe', 'barang_id', 'jumlah', 'tanggal', 'catatan', 'image_path'];
         const headerActivity = ['id', 'timestamp', 'description', 'item_id', 'activity_type'];
 
         let csvContent = 'Data Barang\n' + headerBarang.join(',') + '\n'
@@ -579,8 +691,12 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // --- EVENT LISTENERS ---
-    // Sidebar Toggles
-    hamburgerIcons.forEach(icon => icon.addEventListener('click', openSidebar));
+    console.log(`Found ${hamburgerIcons.length} hamburger icons.`);
+    hamburgerIcons.forEach(icon => {
+        icon.addEventListener('click', openSidebar);
+        console.log('Attached listener to hamburger icon.', icon);
+    });
+    
     btnCloseSidebar.addEventListener('click', closeSidebar);
     overlay.addEventListener('click', closeSidebar);
 
@@ -600,6 +716,20 @@ document.addEventListener('DOMContentLoaded', function() {
     btnTutupModalKategori.addEventListener('click', tutupModalKategori);
     modalKategori.addEventListener('click', (e) => { if (e.target === modalKategori) tutupModalKategori(); });
     formKategori.addEventListener('submit', simpanKategori);
+
+    // Transaksi
+    // Add a button to open transaction modal in the Transaksi page header
+    const transaksiPageHeader = document.querySelector('#transaksi .page-header');
+    const btnTambahTransaksi = document.createElement('button');
+    btnTambahTransaksi.id = 'btn-tambah-transaksi';
+    btnTambahTransaksi.className = 'action-button';
+    btnTambahTransaksi.textContent = 'Tambah';
+    transaksiPageHeader.appendChild(btnTambahTransaksi);
+
+    btnTambahTransaksi.addEventListener('click', () => bukaModalTransaksi());
+    btnTutupModalTransaksi.addEventListener('click', tutupModalTransaksi);
+    modalTransaksi.addEventListener('click', (e) => { if (e.target === modalTransaksi) tutupModalTransaksi(); });
+    formTransaksi.addEventListener('submit', simpanTransaksi);
 
     // Laporan (Ekspor/Impor)
     btnEksporData.addEventListener('click', eksporData);

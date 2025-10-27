@@ -1,6 +1,7 @@
 ### Checklist Timeline Pengembangan "Inventarisku" (7 Minggu)
 
-#### Minggu 1: Setup Proyek
+#### Minggu 1: Setup Proyek dan ui ux
+*   [x] desain ui ux
 *   [x] Inisialisasi proyek Flutter baru.
 *   [x] Konfigurasi Git repository.
 *   [x] Setup struktur folder (layered architecture).
@@ -12,9 +13,11 @@
 *   [ ] Implementasi fitur CRUD untuk entitas `Category`.
 
 #### Minggu 3: CRUD Barang dan Kategori
+*   [ ] Implementasi fitur CRUD untuk entitas `Category` (logika bisnis/service layer).
 *   [ ] Halaman daftar barang dengan pencarian dan pengurutan.
 *   [ ] Form tambah/edit barang dengan input stok, kategori, dan batas restock.
 *   [ ] Halaman manajemen kategori.
+*   [ ] Form tambah/edit transaksi dengan input bukti pembayaran (opsional).
 
 #### Minggu 4: Fitur Restock Notification + Activity Log
 *   [ ] Implementasi logika pengingat restock.

@@ -35,6 +35,7 @@ erDiagram
         string partner
         string note
         double total_amount
+        string image_path
         datetime created_at
     }
 

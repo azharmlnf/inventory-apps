@@ -67,6 +67,7 @@ body { font-family: 'Courier New', Courier, monospace; background-color: #f4f4f4
     color: #333;
     cursor: pointer;
     padding: 0 10px 0 0;
+    z-index: 2001; /* Ensure it's clickable */
 }
 
 /* --- Layout Utama --- */
@@ -157,3 +158,6 @@ input:checked + .slider:before { transform: translateX(22px); }
 .modal.hidden .modal-content { transform: translateY(-30px); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
 .close-button { background: none; border: none; font-size: 2rem; cursor: pointer; line-height: 1; }
+
+/* Style for image in transaction list */
+.transaksi-info img { margin-top: 10px; border: 1px solid #eee; padding: 2px; }

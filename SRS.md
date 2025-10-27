@@ -195,6 +195,7 @@ Inventarisku adalah aplikasi standalone yang berjalan di perangkat Android/iOS, 
   - partner (supplier/pelanggan, opsional)  
   - note  
   - total_amount  
+  - image_path (nullable)  
   - created_at  
 
 - **Tabel `transaction_lines`**  
