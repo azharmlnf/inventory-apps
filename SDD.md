@@ -15,11 +15,11 @@ Tujuannya adalah untuk memberikan panduan detail kepada tim pengembang mengenai 
 
 ### 1.2 Ruang Lingkup
 SDD ini mencakup:
-- Arsitektur sistem berbasis **Layered Architecture**.
+- Arsitektur sistem berbasis **Layered Architecture** dengan integrasi layanan cloud dan tugas latar belakang.
 - Desain komponen rinci per lapisan (Presentation, Business Logic, Data Access).
-- Skema database, aturan integritas, strategi migrasi.
+- Skema database (SQLite), aturan integritas, strategi migrasi.
 - Penanganan error.
-- Struktur proyek Flutter.
+- Struktur proyek Flutter yang diperbarui.
 - Diagram arsitektur untuk visualisasi.
 
 ---
@@ -27,10 +27,10 @@ SDD ini mencakup:
 ## 2. Desain Arsitektur Sistem
 
 ### 2.1 Tinjauan Arsitektur
-Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapisan utama:
+Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapisan utama, ditambah integrasi dengan layanan cloud (Firebase Storage) untuk fitur premium dan penjadwalan tugas latar belakang (Workmanager) untuk backup otomatis:
 1.  **Presentation Layer** → Menyediakan antarmuka pengguna (UI), menangani input pengguna, dan mengelola state.
 2.  **Business Logic Layer (Service Layer)** → Berisi logika bisnis aplikasi, validasi, dan koordinasi antar data model.
-3.  **Data Access Layer** → Bertanggung jawab untuk mengakses dan mengelola data, baik dari database lokal (SQLite/Drift) maupun sumber data eksternal.
+3.  **Data Access Layer** → Bertanggung jawab untuk mengakses dan mengelola data, baik dari database lokal (SQLite) maupun sumber data eksternal (Firebase Storage).
 
 ### 2.2 Diagram Arsitektur (High Level)
 
@@ -39,31 +39,37 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 |  Antarmuka Pengguna     |
 | (Pages, Widgets, State) |
 +-------------------------+
-            |
-            v
+            | ^
+            v |
 +-------------------------+
 | Business Logic Layer    |
 |       (Services)        |
 +-------------------------+
-            |
-            v
+            | ^
+            v |
 +-------------------------+
 |   Data Access Layer     |
 | (Repositories, DAOs)    |
 +-------------------------+
-            |
-            v
-+-------------------------+
-|   Data Sources          |
-| (Drift, SQLite, API)    |
-+-------------------------+
+            | ^
+            v |
++-------------------------+   +-------------------------+
+|   Data Sources          |   |   Cloud Services        |
+| (SQLite, Local Files)   |---| (Firebase Storage)      |
++-------------------------+   +-------------------------+
+            ^ |
+            | v
+            +-------------------------+
+            |   Background Tasks      |
+            | (Workmanager, Notifikasi)|
+            +-------------------------+
 ```
 
 ### 2.3 Deskripsi Lapisan
 
 #### Presentation Layer
 *   Terdiri dari UI Flutter (pages, widgets).
-*   State management menggunakan flutter_bloc untuk memisahkan logika tampilan dari logika bisnis.
+*   State management menggunakan Provider atau Riverpod untuk memisahkan logika tampilan dari logika bisnis.
 *   Meneruskan event dari pengguna ke Business Logic Layer.
 *   Menampilkan data yang diterima dari Business Logic Layer.
 
@@ -76,8 +82,8 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 #### Data Access Layer
 *   Implementasi dari pola Repository dan Data Access Object (DAO).
 *   Menyediakan API sederhana untuk Business Logic Layer dalam mengakses data.
-*   Menyembunyikan detail implementasi sumber data (misalnya, apakah data berasal dari SQLite, file, atau jaringan).
-*   Berisi implementasi Drift (DAO) dan kelas Repository.
+*   Menyembunyikan detail implementasi sumber data (misalnya, apakah data berasal dari SQLite, file, atau Firebase Storage).
+*   Berisi implementasi SQLite (sqflite) dan kelas Repository.
 
 ---
 
@@ -86,23 +92,29 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 ### 3.1 Presentation Layer
 
 **Halaman (Pages):**
-*   `DashboardPage` → Navigasi ke fitur-fitur inti.
-*   `ItemListPage`, `ItemDetailPage`, `ItemFormPage` → Untuk manajemen barang.
+*   `DashboardPage` → Navigasi ke fitur-fitur inti, menampilkan ringkasan stok dan grafik.
+*   `ItemListPage`, `ItemDetailPage`, `ItemFormPage` → Untuk manajemen barang, termasuk input batas restock.
 *   `TransactionListPage`, `TransactionFormPage` → Untuk manajemen transaksi.
-*   `ReportPage` → Untuk melihat laporan.
-*   `SettingsPage` → Untuk pengaturan aplikasi.
+*   `ReportPage` → Untuk melihat laporan dan grafik stok.
+*   `ActivityLogPage` → Menampilkan riwayat aktivitas pengguna.
+*   `SettingsPage` → Untuk pengaturan aplikasi, termasuk opsi backup/restore dan notifikasi.
 
 **Komponen (Widgets):**
 *   Widget yang dapat digunakan kembali seperti `CustomButton`, `StyledListTile`, `ConfirmationDialog`.
-*   Blocs/Cubits untuk mengelola state dari setiap fitur.
+*   Provider/Riverpod untuk mengelola state dari setiap fitur.
+*   Widget khusus untuk menampilkan grafik (menggunakan `fl_chart`).
 
 ### 3.2 Business Logic Layer (Services)
 
 **Services:**
-*   `ItemService` → Mengandung logika bisnis untuk manajemen item (tambah, ubah, hapus, cari item).
+*   `ItemService` → Mengandung logika bisnis untuk manajemen item (tambah, ubah, hapus, cari item, update stok, set batas restock).
 *   `TransactionService` → Mengandung logika untuk membuat transaksi baru dan memperbarui stok item.
 *   `CategoryService` → Mengandung logika untuk manajemen kategori.
-*   `ReportService` → Menghasilkan data untuk laporan.
+*   `ReportService` → Menghasilkan data untuk laporan dan grafik stok.
+*   `ActivityLogService` → Mengelola pencatatan dan pengambilan riwayat aktivitas pengguna.
+*   `NotificationService` → Mengelola notifikasi restock dan notifikasi lokal lainnya.
+*   `BackupService` → Mengelola proses backup dan restore data ke/dari cloud (Firebase Storage).
+*   `MonetizationService` → Mengelola logika terkait iklan dan pembelian dalam aplikasi (premium unlock).
 
 ### 3.3 Data Access Layer
 
@@ -110,18 +122,21 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 *   `ItemRepository` → Implementasi CRUD untuk data item, berinteraksi dengan `ItemDao`.
 *   `TransactionRepository` → Implementasi untuk menyimpan data transaksi, berinteraksi dengan `TransactionDao`.
 *   `CategoryRepository` → Implementasi CRUD untuk data kategori, berinteraksi dengan `CategoryDao`.
+*   `ActivityLogRepository` → Implementasi untuk menyimpan dan mengambil riwayat aktivitas, berinteraksi dengan `ActivityLogDao`.
 
-**Data Access Objects (DAO - Drift):**
+**Data Access Objects (DAO - sqflite):**
 *   `ItemDao` → Menyediakan metode untuk operasi database pada tabel `items`.
 *   `TransactionDao` → Menyediakan metode untuk operasi database pada tabel `transactions` dan `transaction_lines`.
 *   `CategoryDao` → Menyediakan metode untuk operasi database pada tabel `categories`.
+*   `ActivityLogDao` → Menyediakan metode untuk operasi database pada tabel `activity_logs`.
 
 ### 3.4 Model
 
-*   **Item** → `id, name, description, qty, unit, price, imagePath, categoryId`.
+*   **Item** → `id, name, description, qty, unit, price, imagePath, categoryId, minQty`.
 *   **Transaction** → `id, type (IN/OUT), date, partner, note, lines[]`.
 *   **TransactionLine** → `id, transactionId, itemId, qty, price, subtotal`.
 *   **Category** → `id, name, parentId`.
+*   **ActivityLog** → `id, timestamp, description, itemId, type`.
 
 ---
 
@@ -129,15 +144,16 @@ Inventarisku dibangun menggunakan pola **Layered Architecture** dengan tiga lapi
 
 ### Implementasi
 
-Database menggunakan **Drift (SQLite)**.
+Database menggunakan **SQLite (sqflite)**.
 
 ### Skema Utama
 
 * **items** → menyimpan data barang.
 * **categories** → mengelompokkan barang.
 * **transactions** → menyimpan transaksi masuk/keluar.
-* **transaction\_lines** → detail barang per transaksi.
-* **stock\_movements** → log perubahan stok.
+* **transaction_lines** → detail barang per transaksi.
+* **stock_movements** → log perubahan stok.
+* **activity_logs** → menyimpan riwayat aktivitas pengguna.
 
 ### Relasi
 
@@ -190,10 +206,11 @@ Database menggunakan **Drift (SQLite)**.
 │   ├── core/                    # Utilitas, konstanta, dan kelas dasar
 │   │   ├── errors/              # Exceptions kustom
 │   │   ├── constants/
-│   │   └── utils/
+│   │   ├── utils/
+│   │   └── services/            # Layanan inti seperti notifikasi, backup, monetisasi
 │   ├── data/
-│   │   ├── daos/                # Data Access Objects (Drift)
-│   │   ├── models/              # Model data untuk database (jika berbeda dari domain model)
+│   │   ├── daos/                # Data Access Objects (sqflite)
+│   │   ├── models/              # Model data untuk database
 │   │   └── repositories/        # Implementasi Repository
 │   ├── domain/
 │   │   ├── models/              # Model utama aplikasi (Entities)
@@ -201,7 +218,15 @@ Database menggunakan **Drift (SQLite)**.
 │   ├── presentation/
 │   │   ├── pages/               # Halaman-halaman UI
 │   │   ├── widgets/             # Widget yang dapat digunakan kembali
-│   │   └── blocs/           # State management (Blocs/Cubits)
+│   │   └── providers/           # State management (Provider/Riverpod)
+│   ├── features/                # Modul per fitur
+│   │   ├── item_management/
+│   │   ├── transaction_history/
+│   │   ├── reports/
+│   │   ├── activity_log/
+│   │   ├── notifications/
+│   │   ├── backup/
+│   │   └── charts/
 │   └── shared/                  # Widget atau kode yang digunakan di banyak tempat
 ├── pubspec.yaml
 ├── README.md

@@ -1,105 +1,43 @@
-### Checklist Timeline Sprint untuk MVP "Inventarisku"
+### Checklist Timeline Pengembangan "Inventarisku" (7 Minggu)
 
-#### Sprint 0: Fondasi & Penyiapan Proyek (Minggu 1-2)  
-*Tujuan: Menyiapkan kerangka kerja, arsitektur, dan alat pengembangan.*
+#### Minggu 1: Setup Proyek
+*   [x] Inisialisasi proyek Flutter baru.
+*   [x] Konfigurasi Git repository.
+*   [x] Setup struktur folder (layered architecture).
+*   [x] Tambahkan dependensi utama (Provider/Riverpod, sqflite, dll).
 
-- [x] **Inisialisasi Proyek:**
-  - [x] Buat proyek Flutter baru
-  - [x] Inisialisasi Git repository
-- [x] **Manajemen Dependensi:**
-  - [x] Tambahkan dependensi utama ke `pubspec.yaml`  
-        (flutter, flutter_bloc, bloc, equatable, freezed, drift/hive/isar, go_router, logger, dll)
-- [ ] **Struktur Proyek:**
-  - [ ] Buat struktur direktori sesuai Layered Architecture (`app`, `core`, `data`, `domain`, `presentation`, `shared`)
-- [ ] **Konfigurasi Database:**
-  - [ ] Buat file definisi database (`app_database.dart`)
-  - [ ] Definisikan skema tabel `items` dan `transactions`
-  - [ ] Jalankan *build runner* untuk generate kode otomatis
-- [ ] **Konfigurasi Dasar Aplikasi:**
-  - [ ] Siapkan `main.dart` dengan Provider/Scope
-  - [ ] Konfigurasi `GoRouter` dengan rute placeholder  
-        (Dashboard, Barang, Transaksi)
-  - [ ] Buat file tema dasar (AppTheme) untuk light & dark mode
+#### Minggu 2: Implementasi Database & Repository Pattern
+*   [x] Definisikan skema tabel `items`, `categories`, `transactions`, `transaction_lines`, `stock_movements`, `activity_logs`.
+*   [ ] Implementasi fitur CRUD untuk entitas `Item`.
+*   [ ] Implementasi fitur CRUD untuk entitas `Category`.
 
----
+#### Minggu 3: CRUD Barang dan Kategori
+*   [ ] Halaman daftar barang dengan pencarian dan pengurutan.
+*   [ ] Form tambah/edit barang dengan input stok, kategori, dan batas restock.
+*   [ ] Halaman manajemen kategori.
 
-#### Sprint 1: Manajemen Barang Dasar (Minggu 3-4)  
-*Tujuan: Mengimplementasikan fitur CRUD barang.*
+#### Minggu 4: Fitur Restock Notification + Activity Log
+*   [ ] Implementasi logika pengingat restock.
+*   [ ] Integrasi `flutter_local_notifications` untuk notifikasi restock.
+*   [ ] Implementasi pencatatan riwayat aktivitas (Activity Log).
+*   [ ] Halaman untuk menampilkan Activity Log.
 
-- [ ] **Entitas & Use Case:**
-  - [ ] Buat entity `Item`
-  - [ ] Buat use case untuk tambah, edit, hapus barang
-- [ ] **Repository & Data Source:**
-  - [ ] Implementasi repository barang
-  - [ ] Implementasi data source lokal
-- [ ] **UI & State Management:**
-  - [ ] Halaman daftar barang
-  - [ ] Form tambah/edit barang
-  - [ ] Aksi hapus barang dengan konfirmasi
-- [ ] **Fitur Tambahan:**
-  - [ ] Upload/ambil gambar barang
-  - [ ] Validasi input sederhana
+#### Minggu 5: Fitur Grafik Chart Stok
+*   [ ] Integrasi `fl_chart` library.
+*   [ ] Implementasi logika untuk mengambil data stok per kategori.
+*   [ ] Buat halaman atau widget untuk menampilkan grafik batang/pie chart stok.
 
----
+#### Minggu 6: Implementasi Monetisasi (Iklan + Premium Unlock)
+*   [ ] Integrasi Google AdMob untuk iklan banner dan interstitial.
+*   [ ] Implementasi logika untuk menampilkan/menyembunyikan iklan.
+*   [ ] Integrasi `in_app_purchase` Flutter plugin.
+*   [ ] Implementasi logika untuk Premium Unlock (menghapus iklan, mengaktifkan backup cloud).
+*   [ ] Implementasi backup manual ke Firebase Storage.
 
-#### Sprint 2: Transaksi Masuk & Keluar (Minggu 5-6)  
-*Tujuan: Menangani pencatatan barang masuk & keluar.*
-
-- [ ] **Entitas & Use Case:**
-  - [ ] Buat entity `Transaction`
-  - [ ] Buat use case tambah transaksi masuk & keluar
-- [ ] **Repository & Data Source:**
-  - [ ] Implementasi repository transaksi
-  - [ ] Sinkronisasi kuantitas barang otomatis setelah transaksi
-- [ ] **UI & State Management:**
-  - [ ] Halaman tambah transaksi masuk
-  - [ ] Halaman tambah transaksi keluar
-  - [ ] Integrasi dengan detail barang
-
----
-
-#### Sprint 3: Pelaporan & Riwayat (Minggu 7-8)  
-*Tujuan: Memberikan visibilitas stok & riwayat transaksi.*
-
-- [ ] **Ringkasan Stok:**
-  - [ ] Halaman ringkasan stok
-- [ ] **Riwayat Transaksi:**
-  - [ ] Halaman riwayat transaksi (tanggal, barang, tipe, qty)
-  - [ ] Filter transaksi berdasarkan tipe
-  - [ ] Filter transaksi berdasarkan rentang tanggal
-- [ ] **UI Enhancement:**
-  - [ ] Pencarian barang
-  - [ ] Sorting daftar barang
-
----
-
-#### Sprint 4: Ekspor & Impor Data (Minggu 9-10)  
-*Tujuan: Memungkinkan pengguna mencadangkan & memulihkan data.*
-
-- [ ] **Ekspor Data:**
-  - [ ] Ekspor barang & transaksi ke CSV
-  - [ ] Ekspor ke Excel (opsional)
-- [ ] **Impor Data:**
-  - [ ] Impor barang dari CSV
-  - [ ] Validasi format data saat impor
-- [ ] **Integrasi Sharing:**
-  - [ ] Gunakan share_plus untuk membagikan file ekspor
-
----
-
-#### Sprint 5: Peningkatan UX & Testing (Minggu 11-12)  
-*Tujuan: Menyelesaikan polish UI/UX, testing, dan stabilisasi.*
-
-- [ ] **UI/UX:**
-  - [ ] Desain akhir dashboard
-  - [ ] Feedback visual (snackbar, toast, loading indicator)
-  - [ ] Ikonografi & tema warna konsisten
-- [ ] **Pengaturan:**
-  - [ ] Menu pengaturan sederhana (reset data, tentang aplikasi)
-- [ ] **Testing:**
-  - [ ] Unit test use cases
-  - [ ] Widget test untuk UI
-  - [ ] UAT (User Acceptance Testing)
-- [ ] **Stabilisasi:**
-  - [ ] Fix bug
-  - [ ] Review performa (responsif & ringan)
+#### Minggu 7: Testing, Dokumentasi, dan Persiapan Rilis
+*   [ ] Unit test untuk Business Logic Layer (Services).
+*   [ ] Widget test untuk komponen UI utama.
+*   [ ] User Acceptance Testing (UAT).
+*   [ ] Perbaikan bug dan optimasi performa.
+*   [ ] Finalisasi dokumentasi teknis dan pengguna.
+*   [ ] Persiapan aset dan konfigurasi untuk rilis di Google Play Store.

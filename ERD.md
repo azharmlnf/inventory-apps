@@ -55,3 +55,10 @@ erDiagram
         datetime date
         string note
     }
+
+    ACTIVITY_LOGS {
+        int id PK
+        datetime timestamp
+        string description
+        string activity_type
+    }
