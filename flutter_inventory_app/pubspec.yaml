@@ -34,7 +34,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  provider: ^6.0.5
+  provider: ^6.1.5+1
   sqflite: ^2.3.0
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -42,14 +42,18 @@ dependencies:
   share_plus: ^12.0.0
   image_picker: ^1.2.0
   fl_chart: ^0.68.0
-  firebase_core: ^2.24.2
-  firebase_storage: ^11.5.6
+  # Firebase dependencies for cloud backup (Week 6 feature)
+  # Temporarily disabled to fix web build issues.
+  # firebase_core: ^2.24.2
+  # firebase_storage: ^11.5.6
   google_mobile_ads: ^4.0.0
   in_app_purchase: ^3.1.1
-  flutter_local_notifications: ^16.3.0
+  flutter_local_notifications: ^17.1.2
   workmanager: ^0.5.2
   csv: ^5.1.1
   excel: ^2.1.0
+  flutter_riverpod: ^2.5.1
+  sqflite_common_ffi: ^2.3.3
 
 dev_dependencies:
   flutter_test:
