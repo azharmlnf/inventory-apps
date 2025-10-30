@@ -1,65 +1,60 @@
-#### 3.4.3 Diagram ERD (sederhana)
+#### 3.4.3 Diagram ERD (Konseptual untuk Appwrite)
+*Catatan: Ini adalah representasi konseptual. Di Appwrite, relasi diimplementasikan melalui ID dokumen yang disimpan, dan keamanan diatur oleh Aturan Akses (Permissions).*
+
 ```mermaid
 erDiagram
-    ITEMS ||--o{ TRANSACTION_LINES : contains
-    CATEGORIES ||--o{ ITEMS : groups
-    TRANSACTIONS ||--o{ TRANSACTION_LINES : includes
-    ITEMS ||--o{ STOCK_MOVEMENTS : changes
+    USERS ||--|{ STORES : "manages"
+    STORES ||--o{ ITEMS : "contains"
+    STORES ||--o{ CATEGORIES : "contains"
+    STORES ||--o{ TRANSACTIONS : "contains"
+    STORES ||--o{ ACTIVITY_LOGS : "records"
+    
+    USERS {
+        string id PK "Appwrite User ID"
+        string name
+        string email
+    }
 
-    ITEMS {
-        int id PK
-        string code
+    STORES {
+        string id PK "Appwrite Document ID"
+        string user_id FK "Owner"
         string name
         string description
-        int category_id FK
-        string unit
-        double buy_price
-        double sell_price
+    }
+
+    ITEMS {
+        string id PK "Appwrite Document ID"
+        string store_id FK
+        string category_id FK
+        string name
+        string description
         int qty
         int min_qty
-        string image_path
-        datetime created_at
-        datetime updated_at
+        string image_id "Appwrite File ID"
     }
 
     CATEGORIES {
-        int id PK
+        string id PK "Appwrite Document ID"
+        string store_id FK
         string name
-        int parent_id
     }
 
     TRANSACTIONS {
-        int id PK
-        string type
+        string id PK "Appwrite Document ID"
+        string store_id FK
+        string item_id FK
+        string type "IN/OUT"
         datetime date
-        string partner
-        string note
-        double total_amount
-        string image_path
-        datetime created_at
-    }
-
-    TRANSACTION_LINES {
-        int id PK
-        int transaction_id FK
-        int item_id FK
         int qty
-        double unit_price
-        double subtotal
-    }
-
-    STOCK_MOVEMENTS {
-        int id PK
-        int item_id FK
-        int change
-        string source
-        datetime date
         string note
     }
 
     ACTIVITY_LOGS {
-        int id PK
+        string id PK "Appwrite Document ID"
+        string store_id FK
+        string user_id FK "Actor"
         datetime timestamp
         string description
         string activity_type
     }
+```

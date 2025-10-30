@@ -1,8 +1,8 @@
 
 # Product Requirements Document (PRD) - Inventarisku
 
-**Versi:** 1.0  
-**Tanggal:** 17 September 2025  
+**Versi:** 2.0  
+**Tanggal:** 30 Oktober 2025  
 **Penulis:** [Azhar Maulana Ferdiansyah /M. Gunawan Adi Winangun]
 
 ---
@@ -10,185 +10,167 @@
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini menguraikan persyaratan produk untuk **Aplikasi Manajemen Inventaris Sederhana**, sebuah aplikasi mobile berbasis Flutter yang dirancang untuk membantu individu dan usaha kecil dalam melacak stok barang masuk dan keluar dengan mudah dan efisien. Aplikasi ini akan beroperasi sepenuhnya secara offline dengan penyimpanan data lokal, dan tidak memerlukan proses login atau registrasi.
+Dokumen ini menguraikan persyaratan produk untuk **Aplikasi Manajemen Inventaris "Inventarisku"**, sebuah aplikasi mobile berbasis Flutter yang dirancang untuk membantu individu dan usaha kecil dalam melacak stok barang. Aplikasi ini beroperasi dengan **database online (Appwrite)** untuk memungkinkan **akses multi-perangkat** melalui proses **login**.
 
 ### 1.2 Lingkup Produk
-Lingkup produk ini mencakup fungsionalitas inti untuk manajemen inventaris (fitur gratis) serta fitur-fitur premium seperti backup cloud dan penghapusan iklan. Aplikasi ini akan terus beroperasi secara offline sebagai prioritas utama, dengan opsi sinkronisasi cloud untuk fitur premium.
+Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang datanya tersinkronisasi secara online. Aplikasi memerlukan pengguna untuk login untuk mengakses data mereka. Model monetisasi didasarkan pada iklan untuk versi gratis dan opsi berlangganan premium untuk pengalaman bebas iklan.
 
 ### 1.3 Target Pengguna
-- **Individu/Pengguna Rumahan**: melacak barang pribadi atau koleksi.
-- **Usaha Kecil/Mikro (UMKM)**: toko kecil, warung, penjual online.
-- **Pemilik Gudang/Penyimpanan**: memantau barang di gudang.
+- **Usaha Kecil/Mikro (UMKM)**: toko kecil, warung, atau penjual online yang membutuhkan data inventaris yang dapat diakses oleh beberapa karyawan atau dari perangkat yang berbeda.
+- **Tim atau Organisasi Kecil**: mengelola aset atau persediaan internal.
+- **Pengguna Individu**: melacak barang pribadi di beberapa perangkat (misalnya, ponsel dan tablet).
 
 ### 1.4 Nilai Jual Unik (USP)
-- **Kesederhanaan & Kemudahan Penggunaan**: antarmuka intuitif.
-- **Ringan & Cepat**: performa optimal bahkan di perangkat lama.
-- **Offline First**: berfungsi penuh tanpa internet.
-- **Tanpa Login**: langsung pakai tanpa registrasi.
-- **Gratis**: tidak ada biaya penggunaan.
+- **Sinkronisasi Cloud & Multi-Perangkat**: Akses data inventaris Anda di mana saja dan kapan saja.
+- **Login Mudah**: Integrasi dengan Google Login untuk proses autentikasi yang cepat dan aman.
+- **Antarmuka Intuitif**: Desain yang sederhana dan mudah digunakan, bahkan untuk pengguna non-teknis.
+- **Model Freemium yang Jelas**: Gunakan secara gratis dengan iklan, atau tingkatkan ke premium untuk menghilangkan iklan.
 
 ---
 
 ## 2. Fitur & Fungsionalitas
 
-### 2.1 Fitur Gratis (MVP)
+### 2.1 Autentikasi Pengguna
+- **[FR0.1] Login dengan Google**: Pengguna dapat mendaftar dan masuk ke aplikasi menggunakan akun Google mereka.
+- **[FR0.2] Manajemen Sesi**: Aplikasi akan menjaga pengguna tetap login hingga mereka secara eksplisit keluar.
+- **[FR0.3] Logout**: Pengguna dapat keluar dari akun mereka.
 
-#### 2.1.1 Manajemen Barang
-- **[FR1.1] Tambah, Ubah, Hapus, Lihat Barang**: Pengguna dapat mengelola detail barang secara manual.
-- **[FR1.2] Input Stok, Kategori, Batas Restock**: Pengguna dapat memasukkan kuantitas stok, menetapkan kategori, dan menentukan batas minimum stok untuk pengingat.
+### 2.2 Fitur Gratis (MVP)
+*Semua fitur ini memerlukan koneksi internet dan status login.*
 
-#### 2.1.2 Kategori Produk
-- **[FR1.3] Pengelompokan Barang**: Mengelompokkan barang berdasarkan kategori (misalnya: Elektronik, Dapur, Kantor).
+#### 2.2.1 Manajemen Barang
+- **[FR1.1] Tambah, Ubah, Hapus, Lihat Barang**: Pengguna dapat mengelola detail barang yang terkait dengan akun/workspace mereka.
+- **[FR1.2] Input Stok, Kategori, Batas Restock**: Pengguna dapat memasukkan kuantitas stok, menetapkan kategori, dan menentukan batas minimum stok.
 
-#### 2.1.3 Pengingat Restock
-- **[FR1.4] Notifikasi Otomatis**: Menerima notifikasi jika stok barang mencapai atau di bawah batas minimum yang ditentukan.
+#### 2.2.2 Kategori Produk
+- **[FR1.3] Pengelompokan Barang**: Mengelompokkan barang berdasarkan kategori.
 
-#### 2.1.4 Riwayat Aktivitas (Activity Log)
-- **[FR1.5] Pencatatan Aktivitas Pengguna**: Menyimpan catatan aktivitas penting pengguna, seperti penambahan/pengurangan stok, dengan detail waktu dan barang terkait. Contoh: “Kamu menambahkan 5 stok untuk Barang A pada 27/10/2025, 14:21.”
+#### 2.2.3 Pengingat Restock
+- **[FR1.4] Notifikasi Otomatis**: Menerima notifikasi jika stok barang mencapai atau di bawah batas minimum yang ditentukan. (Implementasi bisa via push notification atau notifikasi lokal yang dipicu oleh data online).
 
-#### 2.1.5 Grafik Stok Barang
-- **[FR1.6] Visualisasi Stok**: Menampilkan grafik batang atau pie chart untuk memberikan gambaran visual stok per kategori.
+#### 2.2.4 Riwayat Aktivitas (Activity Log)
+- **[FR1.5] Pencatatan Aktivitas**: Menyimpan catatan aktivitas penting yang dilakukan oleh pengguna dalam workspace mereka.
 
-### 2.2 Fitur Premium
+#### 2.2.5 Grafik Stok Barang
+- **[FR1.6] Visualisasi Stok**: Menampilkan grafik visual stok per kategori.
 
-#### 2.2.1 Backup ke Cloud (Firebase Storage)
-- **[FRP1.1] Backup Data Manual**: Menyimpan seluruh data aplikasi ke Firebase Storage secara manual.
-- **[FRP1.2] Backup Otomatis Harian**: (Akan dikembangkan) Fitur backup otomatis harian menggunakan Workmanager.
+#### 2.2.6 Pencatatan Transaksi
+- **[FR2.1] Tambah Transaksi Masuk & Keluar**: Mencatat pergerakan barang.
+- **[FR2.2] Update Kuantitas Otomatis**: Stok diperbarui secara real-time di database cloud setelah transaksi.
 
-#### 2.2.2 Restore Data
-- **[FRP1.3] Pemulihan Data**: Mengunduh dan memulihkan data dari cloud (Firebase Storage) ke penyimpanan lokal SQLite.
+#### 2.2.7 Pelaporan Sederhana
+- **[FR3.1] Ringkasan Stok & Riwayat Transaksi**: Menampilkan daftar barang dan semua transaksi yang tercatat.
 
-#### 2.2.3 Tanpa Iklan
-- **[FRP1.4] Pengalaman Bebas Iklan**: Menghapus semua iklan banner dan interstitial dari aplikasi.
+### 2.3 Fitur Premium
 
-### 2.3 Pencatatan Transaksi (Dipertahankan dari sebelumnya, namun perlu disesuaikan jika ada perubahan)
-- **[FR2.1] Tambah Transaksi Masuk**: pilih barang, kuantitas, tanggal, catatan.
-- **[FR2.2] Tambah Transaksi Keluar**: pilih barang, kuantitas, tanggal, catatan.
-- **[FR2.3] Update Kuantitas Otomatis**: stok diperbarui setelah transaksi.
-
-### 2.4 Pelaporan Sederhana (Dipertahankan dari sebelumnya, namun perlu disesuaikan jika ada perubahan)
-- **[FR3.1] Ringkasan Stok**: daftar barang + kuantitas saat ini.
-- **[FR3.2] Riwayat Transaksi**: daftar semua transaksi.
-- **[FR3.3] Filter Riwayat Transaksi**: berdasarkan tipe transaksi atau rentang tanggal.
-
-### 2.5 Antarmuka Pengguna & Interaksi (Dipertahankan dari sebelumnya, namun perlu disesuaikan jika ada perubahan)
-- **[FR5.1] Dashboard/Menu Utama**: navigasi ke fitur utama.
-- **[FR5.2] Detail Barang**: lihat detail barang, edit, atau tambah transaksi.
+#### 2.3.1 Tanpa Iklan
+- **[FRP1.1] Pengalaman Bebas Iklan**: Dengan membeli versi premium, semua iklan banner dan interstitial akan dihilangkan dari aplikasi.
 
 ---
 
 ## 3. Desain & Antarmuka Pengguna (UI/UX)
-- **[UX1.1] Intuitif**: desain minimalis & bersih.
-- **[UX1.2] Konsisten**: UI & navigasi konsisten.
-- **[UX1.3] Responsif**: dukung berbagai ukuran layar.
-- **[UI1.1] Warna**: tema sederhana & netral (misal teal/abu-abu).
-- **[UI1.2] Ikonografi**: ikon jelas & mudah dikenali.
-- **[UI1.3] Feedback Visual**: notifikasi/indikator setelah aksi.
+- **[UX1.1] Halaman Login**: Antarmuka yang bersih untuk login menggunakan Google.
+- **[UX1.2] Konsistensi**: UI dan navigasi yang konsisten di seluruh aplikasi.
+- **[UX1.3] Responsif**: Mendukung berbagai ukuran layar.
+- **[UI1.1] Halaman Pengaturan**: Menyertakan detail akun pengguna dan tombol Logout.
 
 ---
 
 ## 4. Persyaratan Non-Fungsional
 
 ### 4.1 Performa
-- **[NFR1.1] Kecepatan**: responsif hingga ribuan item/transaksi.
-- **[NFR1.2] Memori**: ringan, hemat sumber daya.
+- **[NFR1.1] Kecepatan**: Waktu respons yang cepat untuk operasi data, dengan indikator loading yang jelas saat berinteraksi dengan server.
+- **[NFR1.2] Offline-Support (Opsional, Pasca-MVP)**: Aplikasi mungkin menyimpan cache data secara lokal untuk memungkinkan beberapa operasi saat offline, dan menyinkronkannya kembali saat online.
 
 ### 4.2 Skalabilitas
-- **[NFR2.1] Data**: mampu menangani pertumbuhan data.
+- **[NFR2.1] Data**: Arsitektur backend (Appwrite) harus mampu menangani pertumbuhan jumlah pengguna dan data.
 
 ### 4.3 Keamanan
-- **[NFR3.1] Data Lokal**: aman dari akses aplikasi lain.
+- **[NFR3.1] Keamanan Data**: Data pengguna diisolasi dan diamankan menggunakan aturan akses (permissions) di Appwrite. Hanya pengguna yang terautentikasi yang dapat mengakses data mereka.
 
-### 4.4 Kompatibilitas
-- **[NFR4.1] Platform**: Android (API level min tertentu), iOS (min versi tertentu).
-- **[NFR4.2] Flutter**: gunakan versi stabil terbaru.
-
-### 4.5 Maintainability
-- **[NFR5.1] Clean Code**: arsitektur modular & clean.
-- **[NFR5.2] Dokumentasi**: komentar kode memadai.
+### 4.4 Ketersediaan
+- **[NFR4.1] Ketergantungan Jaringan**: Fitur inti memerlukan koneksi internet untuk berinteraksi dengan backend Appwrite.
 
 ---
 
-## 5. Model Data (Struktur Database)
+## 5. Model Data (Struktur Database Appwrite)
 
-### Entitas: Barang (Item)
-- id (PK)
+*Setiap koleksi akan memiliki Aturan Akses (Permissions) untuk memastikan hanya pengguna yang relevan yang dapat mengakses data.*
+
+### Entitas: Pengguna (Users - Disediakan oleh Appwrite)
+- id (PK, Appwrite User ID)
+- nama
+- email
+
+### Entitas: Barang (Items)
+- id (PK, Appwrite Document ID)
+- `user_id` (FK ke Users)
 - nama (TEXT, NOT NULL)
 - deskripsi (TEXT)
 - kuantitas (INTEGER, NOT NULL, default 0)
 - unit (TEXT, NOT NULL)
 - harga_beli (REAL)
 - harga_jual (REAL)
-- gambar_path (TEXT)
+- gambar_id (FK ke Appwrite Storage)
 - barcode (TEXT, UNIQUE)
-- created_at (DATETIME)
-- updated_at (DATETIME)
 
-### Entitas: Transaksi (Transaction)
-- id (PK)
-- item_id (FK ke Barang.id)
+### Entitas: Transaksi (Transactions)
+- id (PK, Appwrite Document ID)
+- `user_id` (FK ke Users)
+- `item_id` (FK ke Items)
 - tipe (TEXT: MASUK/KELUAR)
 - kuantitas (INTEGER, NOT NULL)
 - tanggal (DATETIME, NOT NULL)
 - catatan (TEXT)
-- image_path (TEXT, nullable) - Path gambar bukti pembayaran
-- created_at (DATETIME)
 
-### Entitas: Riwayat Aktivitas (Activity Log)
-- id (PK)
+### Entitas: Riwayat Aktivitas (ActivityLogs)
+- id (PK, Appwrite Document ID)
+- `user_id` (FK ke Users)
 - timestamp (DATETIME, NOT NULL)
 - description (TEXT, NOT NULL)
-- item_id (FK ke Barang.id, nullable)
-- user_id (FK ke User.id, opsional jika ada multi-user)
-- type (TEXT: ADD_STOCK, REMOVE_STOCK, ADD_ITEM, EDIT_ITEM, DELETE_ITEM, etc.)
+- `item_id` (FK ke Items, opsional)
 
 ---
 
 ## 6. Arsitektur Teknis & Peran Library
-- **Flutter SDK**: framework utama.
+- **Flutter SDK**: Framework utama.
 - **State Management**: Provider / Riverpod.
-- **Database**: SQLite (sqflite package).
-- **Chart Visualization**: fl_chart.
-- **Cloud Backup**: Firebase Storage.
-- **Ads Monetization**: Google AdMob.
-- **In-App Purchase**: in_app_purchase Flutter plugin.
-- **Local Notifications**: flutter_local_notifications.
-- **Backup Scheduler**: workmanager (untuk backup otomatis harian).
-- **Path Provider**: akses jalur penyimpanan.
-- **Image Picker**: ambil foto atau pilih gambar.
-- **CSV/Excel**: `csv` & `excel` package.
-- **Share_plus**: berbagi file.
+- **Backend as a Service (BaaS)**: **Appwrite** (untuk Database, Autentikasi, dan Storage file).
+- **Autentikasi**: `google_sign_in` dan `appwrite`.
+- **Chart Visualization**: `fl_chart`.
+- **Ads Monetization**: `google_mobile_ads`.
+- **In-App Purchase**: `in_app_purchase`.
+- **Lainnya**: `path_provider`, `image_picker`, `csv`, `share_plus`.
 
 ### Layered Architecture
-- **Presentation Layer**: UI, state management.
-- **Business Logic Layer**: entities, use cases, repository interfaces.
-- **Data Layer**: implementasi repositori, database lokal, integrasi cloud.
+- **Presentation Layer**: UI, state management (termasuk status login).
+- **Business Logic Layer**: Services yang berinteraksi dengan Appwrite.
+- **Data Layer**: Implementasi repository yang membungkus Appwrite SDK untuk operasi data.
 
 ## 7. Model Monetisasi
 
 ### 7.1 Iklan (Gratis)
-- **[MON1.1] Banner & Interstitial Ads**: Menggunakan Google AdMob untuk menampilkan iklan banner dan interstitial pada versi gratis aplikasi.
+- **[MON1.1] Banner & Interstitial Ads**: Menampilkan iklan pada versi gratis.
 
 ### 7.2 Premium Upgrade
-- **[MON2.1] Penghapusan Iklan**: Pengguna premium tidak akan melihat iklan.
-- **[MON2.2] Fitur Backup Cloud**: Mengaktifkan fitur backup dan restore data ke/dari Firebase Storage.
+- **[MON2.1] Penghapusan Iklan**: Pengguna dapat membayar (langganan atau sekali bayar) untuk menghilangkan semua iklan dari aplikasi.
 
 ---
 
-## 7. Struktur Proyek
+## 8. Struktur Proyek (Diusulkan)
 
 
 ```bash
 .
 ├── lib/
 │ ├── main.dart
-│ ├── app/ # Konfigurasi aplikasi, tema, routing
-│ ├── core/ # Utilities, helpers, constants
-│ ├── features/ # Modul per fitur
+│ ├── app/                     # Konfigurasi aplikasi, tema, routing
+│ ├── core/                    # Utilitas, konstanta, Appwrite client
+│ ├── features/                # Modul per fitur
+│ │ ├── auth/                  # Login, Logout
 │ │ ├── item_management/
-│ │ ├── transaction_history/
-│ │ └── reports/
-│ └── shared/ # Widget umum
+│ │ └── ...
+│ └── ...
 ├── pubspec.yaml
 ├── README.md
 

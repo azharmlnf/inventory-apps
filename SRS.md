@@ -1,74 +1,55 @@
 # Software Requirements Specification (SRS) — Inventarisku
 
-**Versi:** 1.0  
-**Tanggal:** 17 September 2025  
+**Versi:** 2.0  
+**Tanggal:** 30 Oktober 2025  
 **Penulis:** [Azhar Maulana Ferdiansyah /M. Gunawan Adi Winangun]
 ---
 
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Inventarisku**, yaitu aplikasi manajemen inventaris sederhana berbasis Flutter. Dokumen ini akan menjadi acuan bagi tim pengembang, desainer, dan stakeholder dalam proses desain, implementasi, dan pengujian.
+Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Inventarisku**, sebuah aplikasi manajemen inventaris berbasis Flutter yang terhubung ke backend **Appwrite**. Tujuannya adalah menyediakan solusi inventaris yang dapat diakses di berbagai perangkat melalui akun pengguna.
 
 ### 1.2 Ruang Lingkup Produk
-Inventarisku adalah aplikasi mobile untuk mencatat barang, transaksi keluar/masuk, serta menyediakan laporan sederhana. Aplikasi ini ditujukan untuk penggunaan offline dengan penyimpanan data lokal (SQLite), dengan opsi fitur premium untuk backup dan restore data ke cloud (Firebase Storage) serta pengalaman tanpa iklan.
-
-
+Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi, dan laporan. Fungsi inti aplikasi bergantung pada koneksi ke server Appwrite untuk semua operasi data (CRUD). Pengguna diwajibkan untuk **login** untuk mengakses data. Model monetisasi adalah freemium, di mana fitur premium satu-satunya adalah **menghilangkan iklan**.
 
 ### 1.3 Definisi, Akronim, dan Singkatan
-- **MVP**: Minimum Viable Product  
-- **CRUD**: Create, Read, Update, Delete  
-- **CSV**: Comma-Separated Values (format file)  
-- **SQLite**: Database relasional embedded  
-- **UX/UI**: User Experience / User Interface  
+- **MVP**: Minimum Viable Product
+- **CRUD**: Create, Read, Update, Delete
+- **Appwrite**: Backend as a Service (BaaS) yang digunakan untuk database, autentikasi, dan storage.
+- **BaaS**: Backend as a Service
 
 ### 1.4 Referensi
-- Brainstorming PRD — Inventarisku (Dokumen internal).
-- Referensi aplikasi *Barang dan Persediaan* (Chester Software, Playstore).
+- Dokumentasi Appwrite: https://appwrite.io/docs
 - Dokumentasi Flutter: https://docs.flutter.dev
-- Dokumentasi sqflite: https://pub.dev/packages/sqflite
-
-### 1.5 Ikhtisar Dokumen
-Dokumen ini terbagi menjadi:  
-- **Bab 1:** Pendahuluan (konteks & ruang lingkup).  
-- **Bab 2:** Deskripsi umum produk.  
-- **Bab 3:** Persyaratan spesifik (fungsional, non-fungsional, antarmuka, database).  
 
 ---
 
 ## 2. Deskripsi Umum
 
 ### 2.1 Perspektif Produk
-Inventarisku adalah aplikasi standalone yang berjalan di perangkat Android/iOS, bekerja penuh secara offline. Semua data disimpan di perangkat lokal dan dapat diekspor ke file CSV/Excel.
+Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplikasi ini berjalan di Android/iOS dan memerlukan koneksi internet untuk fungsionalitas penuh. Semua data disimpan dan dikelola oleh Appwrite.
 
 ### 2.2 Fungsi Produk
-- Manajemen barang (tambah, edit, hapus, daftar, cari, urutkan, input stok, kategori, batas restock).
-- Pengelompokan barang berdasarkan kategori.
-- Pengingat restock otomatis.
-- Pencatatan riwayat aktivitas pengguna (Activity Log).
-- Visualisasi stok barang melalui grafik.
-- Pencatatan transaksi masuk/keluar.
-- Laporan sederhana: stok & riwayat transaksi.
-- Ekspor & impor data (CSV/Excel).
-- Antarmuka intuitif & sederhana.
-- **Fitur Premium:** Backup data ke cloud (Firebase Storage), restore data dari cloud, dan pengalaman tanpa iklan.
+- **Autentikasi Pengguna**: Login dan registrasi melalui Google.
+- **Manajemen Barang**: CRUD data barang yang terikat pada akun pengguna.
+- **Kategori & Transaksi**: Pengelompokan barang dan pencatatan pergerakan stok.
+- **Notifikasi & Laporan**: Peringatan stok rendah dan laporan dasar.
+- **Ekspor Data**: Kemampuan untuk mengekspor data ke format CSV.
+- **Monetisasi**: Gratis dengan iklan, dengan opsi premium untuk menghilangkan iklan.
 
 ### 2.3 Karakteristik Pengguna
-- **UMKM/toko kecil**: manajemen stok sederhana.
-- **Pengguna rumahan**: melacak barang pribadi.
-- **Pemilik gudang kecil**: memantau stok tanpa sistem ERP kompleks.
-- **Karakteristik umum**: Non-teknis, membutuhkan aplikasi ringan, mudah, tanpa login.
+- **Pengguna Bisnis Kecil**: Pemilik atau staf toko yang perlu mengakses data inventaris dari beberapa lokasi atau perangkat.
+- **Tim**: Anggota tim yang berbagi tanggung jawab mengelola aset bersama.
+- **Karakteristik Umum**: Membutuhkan solusi inventaris yang tersinkronisasi, mudah diakses, dan aman.
 
 ### 2.4 Batasan Umum
-- Hanya mendukung **1 user / 1 perangkat**.
-- Beroperasi tanpa internet.
-- Data hilang jika aplikasi dihapus tanpa backup manual.
-- File ekspor dalam format standar CSV/Excel (tidak terenkripsi).
+- **Ketergantungan Internet**: Fungsionalitas inti aplikasi tidak dapat berjalan tanpa koneksi internet.
+- **Manajemen Pengguna Terpusat**: Pengelolaan pengguna (pembuatan, autentikasi) sepenuhnya ditangani oleh Appwrite.
 
 ### 2.5 Asumsi dan Ketergantungan
-- Pengguna mampu menggunakan smartphone Android/iOS.
-- Flutter SDK versi terbaru yang stabil tersedia.
-- Plugin pihak ketiga (sqflite, provider, csv/excel) tersedia dan kompatibel.
+- Pengguna memiliki akun Google untuk login.
+- Appwrite SDK untuk Flutter tersedia dan kompatibel.
 
 ---
 
@@ -76,154 +57,74 @@ Inventarisku adalah aplikasi standalone yang berjalan di perangkat Android/iOS, 
 
 ### 3.1 Persyaratan Fungsional
 
-#### 3.1.1 Manajemen Barang
-- Tambah barang dengan detail (nama, deskripsi, qty, unit, harga beli/jual, gambar, kategori, batas minimum stok).
-- Edit & hapus barang.
-- Pencarian & pengurutan barang.
-- Daftar barang dengan ringkasan qty & harga.
+#### 3.1.1 Autentikasi Pengguna
+- **[F-AUTH-1]** Sistem harus menyediakan opsi untuk login menggunakan akun Google (Google OAuth).
+- **[F-AUTH-2]** Saat login pertama kali, sistem harus secara otomatis membuat akun pengguna baru di Appwrite.
+- **[F-AUTH-3]** Sistem harus menyediakan fungsionalitas logout.
 
-#### 3.1.2 Kategori Produk
-- Membuat, mengedit, dan menghapus kategori untuk pengelompokan barang.
+#### 3.1.2 Manajemen Barang
+- **[F-ITEM-1]** Pengguna yang sudah login dapat menambah, mengedit, dan menghapus data barang milik mereka.
+- **[F-ITEM-2]** Setiap data barang harus terasosiasi dengan akun pengguna yang membuatnya.
 
-#### 3.1.3 Pengingat Restock
-- Sistem harus memberikan notifikasi otomatis kepada pengguna jika stok barang mencapai atau berada di bawah batas minimum yang telah ditentukan.
+#### 3.1.3 Kategori & Transaksi
+- **[F-TRX-1]** Sistem harus memungkinkan pengguna membuat transaksi masuk/keluar yang secara otomatis memperbarui kuantitas barang di database Appwrite.
 
-#### 3.1.4 Riwayat Aktivitas (Activity Log)
-- Sistem harus mencatat setiap aktivitas penting pengguna terkait perubahan stok atau data barang (misalnya, penambahan/pengurangan stok, penambahan/pengeditan/penghapusan barang) dengan timestamp dan deskripsi yang jelas.
+*(Persyaratan fungsional lain seperti Laporan, Grafik, dll., tetap sama seperti versi sebelumnya tetapi dengan implementasi yang mengarah ke Appwrite.)*
 
-#### 3.1.5 Grafik Stok Barang
-- Sistem harus mampu menampilkan visualisasi stok barang dalam bentuk grafik (batang atau pie chart) berdasarkan kategori.
+#### 3.1.4 Fitur Premium
+- **[F-PREM-1]** **Tanpa Iklan**: Pengguna premium tidak akan melihat iklan banner maupun interstitial dalam aplikasi. Fitur backup/restore data **dihapus**.
 
-#### 3.1.6 Transaksi
-- Tambah transaksi masuk (IN).
-- Tambah transaksi keluar (OUT).
-- Update otomatis kuantitas barang.
-- Catat tanggal, catatan, kuantitas.
-
-#### 3.1.7 Laporan
-- Ringkasan stok (qty terkini).
-- Riwayat transaksi (dengan filter tanggal/tipe).
-- Ekspor laporan ke CSV/Excel.
-
-#### 3.1.8 Ekspor & Impor
-- Ekspor data barang & transaksi.
-- Impor barang dari file CSV/Excel.
-
-#### 3.1.9 Fitur Premium
-- **Backup ke Cloud (Firebase Storage)**: Pengguna premium dapat melakukan backup data secara manual ke Firebase Storage. (Fitur backup otomatis harian akan dikembangkan di versi mendatang).
-- **Restore Data**: Pengguna premium dapat mengunduh dan memulihkan data dari Firebase Storage ke penyimpanan lokal.
-- **Tanpa Iklan**: Pengguna premium tidak akan melihat iklan banner maupun interstitial dalam aplikasi.
-
-#### 3.1.10 Monetisasi
-- Versi 1.0: Gratis dengan iklan.
-- Versi premium: Menghapus iklan dan mengaktifkan fitur backup cloud.
-
----
+#### 3.1.5 Monetisasi
+- **[F-MON-1]** Aplikasi versi gratis akan menampilkan iklan (Google AdMob).
+- **[F-MON-2]** Pengguna dapat melakukan pembelian dalam aplikasi untuk meningkatkan ke status premium dan menghilangkan iklan.
 
 ### 3.2 Persyaratan Non-Fungsional
-- **Performa:** aplikasi harus cepat & responsif (bahkan dengan ribuan item/transaksi).
-- **Keamanan:** data hanya tersimpan lokal & tidak dapat diakses aplikasi lain. Data cloud backup harus diamankan sesuai standar Firebase.
+- **Performa:** Aplikasi harus memberikan feedback visual (seperti loading indicator) saat melakukan operasi jaringan ke Appwrite.
+- **Keamanan:** **[NFR-SEC-1]** Semua data pengguna harus dilindungi oleh aturan akses (permissions) di Appwrite. Pengguna hanya dapat membaca/menulis data milik mereka sendiri. **[NFR-SEC-2]** Komunikasi antara aplikasi dan server Appwrite harus melalui koneksi aman (HTTPS).
 - **Kompatibilitas:** Android (API min 24/Android 7.0+), iOS (13+).
-- **Maintainability:** arsitektur berlapis (Layered Architecture).
-- **Usability:** antarmuka intuitif, mudah digunakan tanpa pelatihan.
-- **Portabilitas:** dapat berjalan di Android & iOS dengan minimal perubahan.
-- **Reliabilitas:** database harus aman dari korupsi dengan mekanisme transaksi. Cloud backup harus memiliki mekanisme penanganan error dan retry.
-- **Ketersediaan:** Fitur inti aplikasi harus berfungsi penuh secara offline. Fitur backup/restore cloud memerlukan koneksi internet.
+- **Ketersediaan:** Aplikasi sangat bergantung pada ketersediaan layanan Appwrite dan koneksi internet pengguna.
 
 ---
 
 ### 3.3 Persyaratan Antarmuka Eksternal
 
 #### 3.3.1 Antarmuka Pengguna (GUI)
-- **Dashboard utama:** navigasi ke Barang, Transaksi, Laporan, Ekspor/Impor, Pengaturan, dan menampilkan ringkasan stok/grafik.
-- **Halaman Barang:** daftar, detail barang, aksi tambah/edit/hapus, input batas restock.
-- **Halaman Transaksi:** input transaksi masuk/keluar.
-- **Halaman Laporan:** ringkasan stok, riwayat transaksi dengan filter, tampilan grafik stok.
-- **Halaman Pengaturan:** preferensi aplikasi, backup/restore data (lokal & cloud), pengaturan notifikasi restock, opsi premium (tanpa iklan).
+- **Halaman Login:** Antarmuka sederhana untuk menampilkan tombol "Login dengan Google".
+- **Dashboard Utama:** Sama seperti sebelumnya, tetapi semua data diambil dari Appwrite.
+- **Halaman Pengaturan:** Diubah untuk menampilkan informasi pengguna yang sedang login (nama, email) dan tombol **Logout**. Opsi backup/restore data dihilangkan.
 
-#### 3.3.2 Antarmuka Perangkat Keras
-- Kamera smartphone (opsional) untuk scan barcode atau foto barang.
-- Penyimpanan internal perangkat (database & file ekspor).
+#### 3.3.2 Antarmuka Perangkat Lunak
+- **Plugin Flutter Pihak Ketiga:**
+  - `appwrite`: Untuk semua interaksi backend (database, auth, storage).
+  - `google_sign_in`: Untuk proses autentikasi OAuth Google.
+  - `provider` / `riverpod`: State management.
+  - `google_mobile_ads`: Monetisasi iklan.
+  - `in_app_purchase`: Pembelian dalam aplikasi.
+  - *(Plugin seperti `sqflite`, `firebase_storage`, `workmanager` untuk backup **dihapus**.)*
 
-#### 3.3.3 Antarmuka Perangkat Lunak
-- Plugin Flutter pihak ketiga:
-  - `sqflite` (database)
-  - `provider` / `riverpod` (state management)
-  - `fl_chart` (visualisasi grafik)
-  - `firebase_storage` (cloud backup)
-  - `google_mobile_ads` (monetisasi iklan)
-  - `in_app_purchase` (pembelian dalam aplikasi)
-  - `flutter_local_notifications` (notifikasi lokal)
-  - `workmanager` (penjadwalan tugas latar belakang)
-  - `path_provider`, `file_picker` (manajemen file)
-  - `image_picker`, `flutter_image_compress` (gambar)
-  - `mobile_scanner` (barcode scanning, jika diimplementasikan)
-  - `csv`, `excel` (ekspor/impor)
-  - `share_plus` (berbagi file)
-
-#### 3.3.4 Antarmuka Komunikasi
-- Komunikasi jaringan diperlukan untuk fitur backup/restore cloud (Firebase Storage) dan menampilkan iklan (Google AdMob).
+#### 3.3.3 Antarmuka Komunikasi
+- Komunikasi jaringan (HTTPS) ke endpoint Appwrite adalah wajib untuk semua fungsi inti.
+- Komunikasi ke server Google (untuk OAuth) dan Google AdMob (untuk iklan).
 
 ---
 
-### 3.4 Persyaratan Database
+### 3.4 Persyaratan Database (Appwrite)
 
-#### 3.4.1 Skema Database
-- **Tabel `items`**  
-  - id (PK)  
-  - code (unik, opsional)  
-  - name  
-  - description  
-  - category_id (FK → categories)  
-  - unit  
-  - buy_price  
-  - sell_price  
-  - qty (stok terkini)  
-  - min_qty  
-  - image_path  
-  - created_at, updated_at  
+#### 3.4.1 Struktur Koleksi (Collections)
+- **Koleksi `items`**:
+  - `user_id` (string, Wajib, terindeks)
+  - `name`, `description`, `qty`, `unit`, `buy_price`, `sell_price`, `min_qty`, `image_id`
+- **Koleksi `categories`**:
+  - `user_id` (string, Wajib, terindeks)
+  - `name`
+- **Koleksi `transactions`**:
+  - `user_id` (string, Wajib, terindeks)
+  - `item_id`, `type`, `date`, `qty`, `note`
+- **Koleksi `activity_logs`**:
+  - `user_id` (string, Wajib, terindeks)
+  - `timestamp`, `description`, `item_id`, `type`
 
-- **Tabel `categories`**  
-  - id (PK)  
-  - name  
-  - parent_id (nullable, FK ke categories.id)  
-
-- **Tabel `transactions`**  
-  - id (PK)  
-  - type (in/out)  
-  - date  
-  - partner (supplier/pelanggan, opsional)  
-  - note  
-  - total_amount  
-  - image_path (nullable)  
-  - created_at  
-
-- **Tabel `transaction_lines`**  
-  - id (PK)  
-  - transaction_id (FK → transactions.id)  
-  - item_id (FK → items.id)  
-  - qty  
-  - unit_price  
-  - subtotal  
-
-- **Tabel `stock_movements`**  
-  - id (PK)  
-  - item_id (FK → items.id)  
-  - change (integer, positif = masuk, negatif = keluar)  
-  - source (transaction_id atau manual adjustment)  
-  - date  
-  - note  
-
-- **Tabel `activity_logs`**
-  - id (PK)
-  - timestamp (DATETIME, NOT NULL)
-  - description (TEXT, NOT NULL)
-  - item_id (FK → items.id, nullable)
-  - type (TEXT: ADD_STOCK, REMOVE_STOCK, ADD_ITEM, EDIT_ITEM, DELETE_ITEM, etc.)
-
-#### 3.4.2 Relasi
-- Satu `item` bisa muncul di banyak `transaction_lines`.  
-- Satu `transaction` memiliki banyak `transaction_lines`.  
-- `stock_movements` merekam perubahan stok untuk keperluan audit/log.  
-
+#### 3.4.2 Aturan Akses (Permissions)
+- Untuk setiap dokumen di semua koleksi, hak akses tulis/hapus (`write/delete`) hanya diberikan kepada pengguna yang `user_id`-nya cocok dengan ID pengguna yang membuat dokumen.
+- Hak akses baca (`read`) bisa diberikan pada level pengguna yang sama, atau level tim jika ada fitur multi-user di masa depan.
 
