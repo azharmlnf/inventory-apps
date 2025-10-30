@@ -1,6 +1,6 @@
 # Software Requirements Specification (SRS) — Inventarisku
 
-**Versi:** 2.0  
+**Versi:** 2.1  
 **Tanggal:** 30 Oktober 2025  
 **Penulis:** [Azhar Maulana Ferdiansyah /M. Gunawan Adi Winangun]
 ---
@@ -8,10 +8,10 @@
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Inventarisku**, sebuah aplikasi manajemen inventaris berbasis Flutter yang terhubung ke backend **Appwrite**. Tujuannya adalah menyediakan solusi inventaris yang dapat diakses di berbagai perangkat melalui akun pengguna.
+Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Inventarisku**, sebuah aplikasi manajemen inventaris berbasis Flutter yang terhubung ke backend **Appwrite**. Dokumen ini akan menjadi acuan bagi tim pengembang, desainer, dan stakeholder dalam proses desain, implementasi, dan pengujian.
 
 ### 1.2 Ruang Lingkup Produk
-Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi, dan laporan. Fungsi inti aplikasi bergantung pada koneksi ke server Appwrite untuk semua operasi data (CRUD). Pengguna diwajibkan untuk **login** untuk mengakses data. Model monetisasi adalah freemium, di mana fitur premium satu-satunya adalah **menghilangkan iklan**.
+Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi keluar/masuk, serta menyediakan laporan sederhana. Fungsi inti aplikasi bergantung pada koneksi ke server Appwrite untuk semua operasi data (CRUD). Pengguna diwajibkan untuk **login** untuk mengakses data. Model monetisasi adalah freemium, di mana fitur premium satu-satunya adalah **menghilangkan iklan**.
 
 ### 1.3 Definisi, Akronim, dan Singkatan
 - **MVP**: Minimum Viable Product
@@ -31,7 +31,7 @@ Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi, dan
 Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplikasi ini berjalan di Android/iOS dan memerlukan koneksi internet untuk fungsionalitas penuh. Semua data disimpan dan dikelola oleh Appwrite.
 
 ### 2.2 Fungsi Produk
-- **Autentikasi Pengguna**: Login dan registrasi melalui Google.
+- **Autentikasi Pengguna**: Registrasi dan login melalui email/password.
 - **Manajemen Barang**: CRUD data barang yang terikat pada akun pengguna.
 - **Kategori & Transaksi**: Pengelompokan barang dan pencatatan pergerakan stok.
 - **Notifikasi & Laporan**: Peringatan stok rendah dan laporan dasar.
@@ -48,7 +48,7 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 - **Manajemen Pengguna Terpusat**: Pengelolaan pengguna (pembuatan, autentikasi) sepenuhnya ditangani oleh Appwrite.
 
 ### 2.5 Asumsi dan Ketergantungan
-- Pengguna memiliki akun Google untuk login.
+- Pengguna memiliki alamat email yang valid.
 - Appwrite SDK untuk Flutter tersedia dan kompatibel.
 
 ---
@@ -58,9 +58,10 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 ### 3.1 Persyaratan Fungsional
 
 #### 3.1.1 Autentikasi Pengguna
-- **[F-AUTH-1]** Sistem harus menyediakan opsi untuk login menggunakan akun Google (Google OAuth).
-- **[F-AUTH-2]** Saat login pertama kali, sistem harus secara otomatis membuat akun pengguna baru di Appwrite.
-- **[F-AUTH-3]** Sistem harus menyediakan fungsionalitas logout.
+- **[F-AUTH-1]** Sistem harus menyediakan form registrasi dengan email dan password.
+- **[F-AUTH-2]** Sistem harus menyediakan form login dengan email dan password.
+- **[F-AUTH-3]** Sistem harus menjaga pengguna tetap login hingga mereka secara eksplisit keluar.
+- **[F-AUTH-4]** Sistem harus menyediakan fungsionalitas logout.
 
 #### 3.1.2 Manajemen Barang
 - **[F-ITEM-1]** Pengguna yang sudah login dapat menambah, mengedit, dan menghapus data barang milik mereka.
@@ -89,22 +90,21 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 ### 3.3 Persyaratan Antarmuka Eksternal
 
 #### 3.3.1 Antarmuka Pengguna (GUI)
-- **Halaman Login:** Antarmuka sederhana untuk menampilkan tombol "Login dengan Google".
+- **Halaman Login/Registrasi:** Antarmuka sederhana untuk input email dan password, serta tombol untuk login dan registrasi.
 - **Dashboard Utama:** Sama seperti sebelumnya, tetapi semua data diambil dari Appwrite.
 - **Halaman Pengaturan:** Diubah untuk menampilkan informasi pengguna yang sedang login (nama, email) dan tombol **Logout**. Opsi backup/restore data dihilangkan.
 
 #### 3.3.2 Antarmuka Perangkat Lunak
 - **Plugin Flutter Pihak Ketiga:**
   - `appwrite`: Untuk semua interaksi backend (database, auth, storage).
-  - `google_sign_in`: Untuk proses autentikasi OAuth Google.
+  - `flutter_web_auth_2`: Untuk menangani redirect OAuth (jika diperlukan untuk fitur lain di masa depan).
   - `provider` / `riverpod`: State management.
   - `google_mobile_ads`: Monetisasi iklan.
   - `in_app_purchase`: Pembelian dalam aplikasi.
-  - *(Plugin seperti `sqflite`, `firebase_storage`, `workmanager` untuk backup **dihapus**.)*
 
 #### 3.3.3 Antarmuka Komunikasi
 - Komunikasi jaringan (HTTPS) ke endpoint Appwrite adalah wajib untuk semua fungsi inti.
-- Komunikasi ke server Google (untuk OAuth) dan Google AdMob (untuk iklan).
+- Komunikasi ke Google AdMob (untuk iklan).
 
 ---
 

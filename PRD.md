@@ -1,7 +1,7 @@
 
 # Product Requirements Document (PRD) - Inventarisku
 
-**Versi:** 2.0  
+**Versi:** 2.1  
 **Tanggal:** 30 Oktober 2025  
 **Penulis:** [Azhar Maulana Ferdiansyah /M. Gunawan Adi Winangun]
 
@@ -22,7 +22,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 
 ### 1.4 Nilai Jual Unik (USP)
 - **Sinkronisasi Cloud & Multi-Perangkat**: Akses data inventaris Anda di mana saja dan kapan saja.
-- **Login Mudah**: Integrasi dengan Google Login untuk proses autentikasi yang cepat dan aman.
+- **Login Mudah**: Registrasi dan Login menggunakan Email/Password.
 - **Antarmuka Intuitif**: Desain yang sederhana dan mudah digunakan, bahkan untuk pengguna non-teknis.
 - **Model Freemium yang Jelas**: Gunakan secara gratis dengan iklan, atau tingkatkan ke premium untuk menghilangkan iklan.
 
@@ -31,9 +31,10 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 ## 2. Fitur & Fungsionalitas
 
 ### 2.1 Autentikasi Pengguna
-- **[FR0.1] Login dengan Google**: Pengguna dapat mendaftar dan masuk ke aplikasi menggunakan akun Google mereka.
-- **[FR0.2] Manajemen Sesi**: Aplikasi akan menjaga pengguna tetap login hingga mereka secara eksplisit keluar.
-- **[FR0.3] Logout**: Pengguna dapat keluar dari akun mereka.
+- **[FR0.1] Registrasi Pengguna**: Pengguna dapat mendaftar menggunakan email dan password.
+- **[FR0.2] Login Pengguna**: Pengguna dapat masuk menggunakan email dan password yang terdaftar.
+- **[FR0.3] Manajemen Sesi**: Aplikasi akan menjaga pengguna tetap login hingga mereka secara eksplisit keluar.
+- **[FR0.4] Logout**: Pengguna dapat keluar dari akun mereka.
 
 ### 2.2 Fitur Gratis (MVP)
 *Semua fitur ini memerlukan koneksi internet dan status login.*
@@ -69,7 +70,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 ---
 
 ## 3. Desain & Antarmuka Pengguna (UI/UX)
-- **[UX1.1] Halaman Login**: Antarmuka yang bersih untuk login menggunakan Google.
+- **[UX1.1] Halaman Login/Registrasi**: Antarmuka yang bersih untuk login dan registrasi menggunakan email/password.
 - **[UX1.2] Konsistensi**: UI dan navigasi yang konsisten di seluruh aplikasi.
 - **[UX1.3] Responsif**: Mendukung berbagai ukuran layar.
 - **[UI1.1] Halaman Pengaturan**: Menyertakan detail akun pengguna dan tombol Logout.
@@ -136,7 +137,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 - **Flutter SDK**: Framework utama.
 - **State Management**: Provider / Riverpod.
 - **Backend as a Service (BaaS)**: **Appwrite** (untuk Database, Autentikasi, dan Storage file).
-- **Autentikasi**: `google_sign_in` dan `appwrite`.
+- **Autentikasi**: `appwrite`.
 - **Chart Visualization**: `fl_chart`.
 - **Ads Monetization**: `google_mobile_ads`.
 - **In-App Purchase**: `in_app_purchase`.

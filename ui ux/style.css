@@ -4,7 +4,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Courier New', Courier, monospace; background-color: #f4f4f4; color: #333; line-height: 1.6; }
 
-/* --- Halaman Login --- */
+/* --- Halaman Auth (Login/Registrasi) --- */
 .page-container {
     display: flex;
     justify-content: center;
@@ -12,7 +12,7 @@ body { font-family: 'Courier New', Courier, monospace; background-color: #f4f4f4
     height: 100vh;
     padding: 15px;
 }
-.login-box {
+.auth-box {
     text-align: center;
     padding: 40px 30px;
     background-color: #fff;
@@ -20,19 +20,37 @@ body { font-family: 'Courier New', Courier, monospace; background-color: #f4f4f4
     max-width: 400px;
     width: 100%;
 }
-.login-box h1 {
+.auth-box h1 {
     margin-bottom: 10px;
     font-size: 2em;
 }
-.login-box p {
+.auth-box p {
     margin-bottom: 30px;
     color: #666;
 }
-#btn-login-google {
-    background-color: #4285F4;
-    color: white;
-    border-color: #4285F4;
-    font-size: 1.1em;
+.auth-box .form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+.auth-box .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.auth-box .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    font-family: inherit;
+    font-size: 1em;
+}
+.auth-box .action-button {
+    margin-top: 10px;
+}
+.auth-box .secondary-button {
+    background-color: #f0f0f0;
+    color: #333;
+    border-color: #ccc;
 }
 
 /* --- Sidebar & Overlay --- */
@@ -97,6 +115,11 @@ h2 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
 .card { border: 2px solid #ccc; padding: 15px; }
 .card h4 { margin-bottom: 5px; font-size: 0.9em; }
 .card p { font-size: 1.8em; font-weight: bold; }
+
+/* --- Laporan --- */
+.report-summary-cards { margin-bottom: 20px; }
+.report-summary-cards .card h4 { font-size: 1em; }
+.report-summary-cards .card p { font-size: 1.5em; }
 
 /* --- Pengaturan --- */
 .user-profile-section, .premium-features-section {

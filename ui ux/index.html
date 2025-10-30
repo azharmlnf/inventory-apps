@@ -9,12 +9,21 @@
 </head>
 <body>
 
-    <!-- Halaman Login -->
-    <div id="login-page" class="page-container">
-        <div class="login-box">
+    <!-- Halaman Login/Registrasi -->
+    <div id="auth-page" class="page-container">
+        <div class="auth-box">
             <h1>Inventarisku</h1>
-            <p>Manajemen inventaris di cloud.</p>
-            <button id="btn-login-google" class="action-button">Login dengan Google</button>
+            <p>Kelola inventaris Anda dengan mudah.</p>
+            <div class="form-group">
+                <label for="auth-email">Email</label>
+                <input type="email" id="auth-email" placeholder="email@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="auth-password">Password</label>
+                <input type="password" id="auth-password" placeholder="********" required>
+            </div>
+            <button id="btn-login" class="action-button">Login</button>
+            <button id="btn-register" class="action-button secondary-button">Registrasi</button>
         </div>
     </div>
 
@@ -112,8 +121,21 @@
                     <button class="hamburger-icon">&#9776;</button>
                     <h1>Laporan Stok</h1>
                 </div>
+                <div class="summary-cards report-summary-cards">
+                    <div class="card"><h4>Total Nilai Stok</h4><p id="total-nilai-stok">Rp 0</p></div>
+                    <div class="card"><h4>Total Nilai Penjualan</h4><p id="total-nilai-penjualan">Rp 0</p></div>
+                    <div class="card"><h4>Total Keuntungan Kotor</h4><p id="total-keuntungan-kotor">Rp 0</p></div>
+                </div>
                 <h2>Visualisasi Stok Barang per Kategori</h2>
                 <div id="chart-container" class="chart-container"></div>
+                <h2>Barang Terlaris</h2>
+                <div class="placeholder-box">
+                    <ul id="barang-terlaris-list"><li>Tidak ada data penjualan.</li></ul>
+                </div>
+                <h2>Kategori Stok Terbanyak</h2>
+                <div class="placeholder-box">
+                    <p id="kategori-stok-terbanyak">Tidak ada data.</p>
+                </div>
                 <h2>Ekspor Data</h2>
                 <div class="export-import-section">
                     <button id="btn-ekspor-data" class="action-button">Ekspor Data (CSV)</button>
@@ -122,10 +144,85 @@
         </main>
     </div>
 
-    <!-- Berbagai Modal (Tetap Sama) -->
-    <div id="modal-barang" class="modal hidden">...</div>
-    <div id="modal-kategori" class="modal hidden">...</div>
-    <div id="modal-transaksi" class="modal hidden">...</div>
+    <!-- Modal Form Tambah/Edit Barang -->
+    <div id="modal-barang" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-barang-title">Tambah Barang Baru</h2>
+                <button id="btn-tutup-modal-barang" class="close-button" aria-label="Tutup">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-barang">
+                    <input type="hidden" id="barang-id">
+                    <div class="form-group"><label for="barang-kode">Kode Barang</label><input type="text" id="barang-kode" required></div>
+                    <div class="form-group"><label for="barang-nama">Nama Barang</label><input type="text" id="barang-nama" required></div>
+                    <div class="form-group"><label for="barang-kuantitas">Kuantitas</label><input type="number" id="barang-kuantitas" required></div>
+                    <div class="form-group"><label for="barang-unit">Unit</label><input type="text" id="barang-unit" placeholder="cth: Pcs, Box" required></div>
+                    <div class="form-group"><label for="barang-harga-beli">Harga Beli</label><input type="number" id="barang-harga-beli" required></div>
+                    <div class="form-group"><label for="barang-harga-jual">Harga Jual</label><input type="number" id="barang-harga-jual" required></div>
+                    <div class="form-group"><label for="barang-min-qty">Batas Stok Rendah</label><input type="number" id="barang-min-qty" value="10" required></div>
+                    <div class="form-group">
+                        <label for="barang-kategori">Kategori</label>
+                        <select id="barang-kategori">
+                            <!-- Opsi kategori akan di-generate oleh JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group"><label for="barang-gambar">Gambar (URL/Path)</label><input type="text" id="barang-gambar"></div>
+                    <button type="submit" class="action-button">Simpan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Tambah/Edit Kategori -->
+    <div id="modal-kategori" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-kategori-title">Tambah Kategori Baru</h2>
+                <button id="btn-tutup-modal-kategori" class="close-button" aria-label="Tutup">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-kategori">
+                    <input type="hidden" id="kategori-id">
+                    <div class="form-group"><label for="kategori-nama">Nama Kategori</label><input type="text" id="kategori-nama" required></div>
+                    <button type="submit" class="action-button">Simpan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Tambah/Edit Transaksi -->
+    <div id="modal-transaksi" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-transaksi-title">Tambah Transaksi Baru</h2>
+                <button id="btn-tutup-modal-transaksi" class="close-button" aria-label="Tutup">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-transaksi">
+                    <input type="hidden" id="transaksi-id">
+                    <div class="form-group">
+                        <label for="transaksi-tipe">Tipe Transaksi</label>
+                        <select id="transaksi-tipe" required>
+                            <option value="masuk">Masuk</option>
+                            <option value="keluar">Keluar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transaksi-barang">Barang</label>
+                        <select id="transaksi-barang" required>
+                            <!-- Opsi barang akan di-generate oleh JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group"><label for="transaksi-jumlah">Jumlah</label><input type="number" id="transaksi-jumlah" required min="1"></div>
+                    <div class="form-group"><label for="transaksi-tanggal">Tanggal</label><input type="date" id="transaksi-tanggal" required></div>
+                    <div class="form-group"><label for="transaksi-catatan">Catatan</label><input type="text" id="transaksi-catatan"></div>
+                    <div class="form-group"><label for="transaksi-bukti-pembayaran">Bukti Pembayaran (URL/Path, Opsional)</label><input type="text" id="transaksi-bukti-pembayaran"></div>
+                    <button type="submit" class="action-button">Simpan Transaksi</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

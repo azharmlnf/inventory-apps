@@ -1,17 +1,18 @@
-### Checklist Timeline Pengembangan "Inventarisku" v2.0 (7 Minggu)
+### Checklist Timeline Pengembangan "Inventarisku" v2.1 (7 Minggu)
 
 #### Minggu 1: Setup Proyek & Autentikasi
 *   **Setup Backend & Frontend:**
     *   [ ] Konfigurasi proyek baru di Appwrite (Auth, Database, Storage).
     *   [ ] Inisialisasi proyek Flutter, konfigurasi Git, dan struktur folder.
-    *   [ ] Tambahkan dependensi utama: `flutter_riverpod`, `appwrite`, `google_sign_in`, `google_mobile_ads`.
-*   **Implementasi Autentikasi:**
+    *   [ ] Tambahkan dependensi utama: `flutter_riverpod`, `appwrite`, `google_mobile_ads`.
+*   **Implementasi Autentikasi (Email/Password):**
     *   [ ] Buat `AuthRepository` dan `AuthService`.
-    *   [ ] Buat `LoginPage` dengan tombol "Login dengan Google".
-    *   [ ] Implementasikan alur login OAuth2 dengan Google melalui Appwrite.
-    *   [ ] Implementasikan alur Logout.
+    *   [ ] Buat `LoginPage` dengan form input email dan password untuk login dan registrasi.
+    *   [ ] Implementasikan alur registrasi pengguna dengan email dan password Appwrite (`account.create()`).
+    *   [ ] Implementasikan alur login pengguna dengan email dan password Appwrite (`account.createEmailSession()`).
+    *   [ ] Implementasikan alur Logout (`account.deleteSession()`).
     *   [ ] Buat `SplashScreen` untuk mengarahkan pengguna berdasarkan status login.
-    *   [ ] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login.
+    *   [ ] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login/registrasi manual.
 
 #### Minggu 2: Implementasi CRUD Dasar (Online)
 *   **Setup Appwrite Collections:**
@@ -61,7 +62,6 @@
     *   [ ] Integrasi `in_app_purchase` Flutter plugin.
     *   [ ] Implementasikan logika untuk mengelola status premium pengguna.
     *   [ ] Sembunyikan semua iklan jika status pengguna adalah premium.
-*   **(Tugas backup/restore cloud DIHAPUS karena tidak relevan lagi).**
 
 #### Minggu 7: Testing, Dokumentasi, dan Persiapan Rilis
 *   **Testing:**
