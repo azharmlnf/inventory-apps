@@ -2,16 +2,16 @@
 
 #### Minggu 1: Setup Proyek & Autentikasi
 *   **Setup Backend & Frontend:**
-    *   [ ] Konfigurasi proyek baru di Appwrite (Auth, Database, Storage).
-    *   [ ] Inisialisasi proyek Flutter, konfigurasi Git, dan struktur folder.
+    *   [x] Konfigurasi proyek baru di Appwrite (Auth, Database, Storage).
+    *   [x] Inisialisasi proyek Flutter, konfigurasi Git, dan struktur folder.
     *   [ ] Tambahkan dependensi utama: `flutter_riverpod`, `appwrite`, `google_mobile_ads`.
 *   **Implementasi Autentikasi (Email/Password):**
-    *   [ ] Buat `AuthRepository` dan `AuthService`.
-    *   [ ] Buat `LoginPage` dengan form input email dan password untuk login dan registrasi.
-    *   [ ] Implementasikan alur registrasi pengguna dengan email dan password Appwrite (`account.create()`).
-    *   [ ] Implementasikan alur login pengguna dengan email dan password Appwrite (`account.createEmailSession()`).
+    *   [x] Buat `AuthRepository` dan `AuthService`.
+    *   [x] Buat `LoginPage` dengan form input email dan password untuk login dan registrasi.
+    *   [x] Implementasikan alur registrasi pengguna dengan email dan password Appwrite (`account.create()`).
+    *   [x] Implementasikan alur login pengguna dengan email dan password Appwrite (`account.createEmailSession()`).
     *   [ ] Implementasikan alur Logout (`account.deleteSession()`).
-    *   [ ] Buat `SplashScreen` untuk mengarahkan pengguna berdasarkan status login.
+    *   [x] Buat `SplashScreen` untuk mengarahkan pengguna berdasarkan status login.
     *   [ ] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login/registrasi manual.
 
 #### Minggu 2: Implementasi CRUD Dasar (Online)
