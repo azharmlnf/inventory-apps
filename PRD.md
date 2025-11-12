@@ -87,7 +87,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 - **[NFR2.1] Data**: Arsitektur backend (Appwrite) harus mampu menangani pertumbuhan jumlah pengguna dan data.
 
 ### 4.3 Keamanan
-- **[NFR3.1] Keamanan Data**: Data pengguna diisolasi dan diamankan menggunakan aturan akses (permissions) di Appwrite. Hanya pengguna yang terautentikasi yang dapat mengakses data mereka.
+- **[NFR3.1] Keamanan Data**: Data setiap pengguna harus terisolasi sepenuhnya. Isolasi ini dijamin dengan menerapkan **izin akses level dokumen (document-level permissions)** di Appwrite untuk setiap data yang dibuat. Pengguna yang terautentikasi hanya dapat membuat, membaca, mengubah, dan menghapus data miliknya sendiri.
 
 ### 4.4 Ketersediaan
 - **[NFR4.1] Ketergantungan Jaringan**: Fitur inti memerlukan koneksi internet untuk berinteraksi dengan backend Appwrite.
@@ -96,7 +96,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 
 ## 5. Model Data (Struktur Database Appwrite)
 
-*Setiap koleksi akan memiliki Aturan Akses (Permissions) untuk memastikan hanya pengguna yang relevan yang dapat mengakses data.*
+*Setiap dokumen yang dibuat akan memiliki **Document-Level Permissions** untuk memastikan hanya pengguna pemilik yang dapat mengaksesnya.*
 
 ### Entitas: Pengguna (Users - Disediakan oleh Appwrite)
 - id (PK, Appwrite User ID)
@@ -105,31 +105,33 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 
 ### Entitas: Barang (Items)
 - id (PK, Appwrite Document ID)
-- `user_id` (FK ke Users)
-- nama (TEXT, NOT NULL)
-- deskripsi (TEXT)
-- kuantitas (INTEGER, NOT NULL, default 0)
-- unit (TEXT, NOT NULL)
-- harga_beli (REAL)
-- harga_jual (REAL)
-- gambar_id (FK ke Appwrite Storage)
-- barcode (TEXT, UNIQUE)
+- `userId` (FK ke Users, Wajib)
+- `name` (TEXT, NOT NULL)
+- `description` (TEXT)
+- `quantity` (INTEGER, NOT NULL, default 0)
+- `categoryId` (TEXT, opsional)
+- `imageId` (FK ke Appwrite Storage, opsional)
+
+### Entitas: Kategori (Categories)
+- id (PK, Appwrite Document ID)
+- `userId` (FK ke Users, Wajib)
+- `name` (TEXT, NOT NULL)
 
 ### Entitas: Transaksi (Transactions)
 - id (PK, Appwrite Document ID)
-- `user_id` (FK ke Users)
-- `item_id` (FK ke Items)
-- tipe (TEXT: MASUK/KELUAR)
-- kuantitas (INTEGER, NOT NULL)
-- tanggal (DATETIME, NOT NULL)
-- catatan (TEXT)
+- `userId` (FK ke Users, Wajib)
+- `itemId` (FK ke Items, Wajib)
+- `type` (TEXT: IN/OUT)
+- `quantity` (INTEGER, NOT NULL)
+- `date` (DATETIME, NOT NULL)
+- `note` (TEXT)
 
 ### Entitas: Riwayat Aktivitas (ActivityLogs)
 - id (PK, Appwrite Document ID)
-- `user_id` (FK ke Users)
-- timestamp (DATETIME, NOT NULL)
-- description (TEXT, NOT NULL)
-- `item_id` (FK ke Items, opsional)
+- `userId` (FK ke Users, Wajib)
+- `timestamp` (DATETIME, NOT NULL)
+- `description` (TEXT, NOT NULL)
+- `itemId` (FK ke Items, opsional)
 
 ---
 

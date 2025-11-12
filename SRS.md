@@ -81,7 +81,7 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 
 ### 3.2 Persyaratan Non-Fungsional
 - **Performa:** Aplikasi harus memberikan feedback visual (seperti loading indicator) saat melakukan operasi jaringan ke Appwrite.
-- **Keamanan:** **[NFR-SEC-1]** Semua data pengguna harus dilindungi oleh aturan akses (permissions) di Appwrite. Pengguna hanya dapat membaca/menulis data milik mereka sendiri. **[NFR-SEC-2]** Komunikasi antara aplikasi dan server Appwrite harus melalui koneksi aman (HTTPS).
+- **Keamanan:** **[NFR-SEC-1]** Semua data pengguna harus dilindungi dan terisolasi menggunakan **izin akses level dokumen (document-level permissions)** di Appwrite. Pengguna hanya dapat membaca dan memodifikasi data yang secara eksplisit terikat pada ID pengguna mereka. **[NFR-SEC-2]** Komunikasi antara aplikasi dan server Appwrite harus melalui koneksi aman (HTTPS).
 - **Kompatibilitas:** Android (API min 24/Android 7.0+), iOS (13+).
 - **Ketersediaan:** Aplikasi sangat bergantung pada ketersediaan layanan Appwrite dan koneksi internet pengguna.
 
@@ -112,19 +112,20 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 
 #### 3.4.1 Struktur Koleksi (Collections)
 - **Koleksi `items`**:
-  - `user_id` (string, Wajib, terindeks)
-  - `name`, `description`, `qty`, `unit`, `buy_price`, `sell_price`, `min_qty`, `image_id`
+  - `userId` (string, Wajib, terindeks)
+  - `name`, `description`, `quantity`, `unit`, `purchase_price`, `sale_price`, `min_quantity`, `imageId`
 - **Koleksi `categories`**:
-  - `user_id` (string, Wajib, terindeks)
+  - `userId` (string, Wajib, terindeks)
   - `name`
 - **Koleksi `transactions`**:
-  - `user_id` (string, Wajib, terindeks)
-  - `item_id`, `type`, `date`, `qty`, `note`
+  - `userId` (string, Wajib, terindeks)
+  - `itemId`, `type`, `date`, `quantity`, `note`
 - **Koleksi `activity_logs`**:
-  - `user_id` (string, Wajib, terindeks)
-  - `timestamp`, `description`, `item_id`, `type`
+  - `userId` (string, Wajib, terindeks)
+  - `timestamp`, `description`, `itemId`, `type`
 
 #### 3.4.2 Aturan Akses (Permissions)
-- Untuk setiap dokumen di semua koleksi, hak akses tulis/hapus (`write/delete`) hanya diberikan kepada pengguna yang `user_id`-nya cocok dengan ID pengguna yang membuat dokumen.
-- Hak akses baca (`read`) bisa diberikan pada level pengguna yang sama, atau level tim jika ada fitur multi-user di masa depan.
+- Untuk setiap dokumen yang dibuat di semua koleksi, izin akses akan diatur secara terprogram pada saat pembuatan.
+- Izin akan diberikan secara spesifik kepada ID pengguna yang membuat dokumen tersebut (contoh: `Permission.read("user:USER_ID")`, `Permission.update("user:USER_ID")`).
+- Strategi ini memastikan bahwa tidak ada pengguna yang dapat mengakses, mengubah, atau menghapus data milik pengguna lain secara tidak sengaja maupun sengaja.
 

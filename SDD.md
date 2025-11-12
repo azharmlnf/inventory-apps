@@ -73,32 +73,8 @@ graph TD
 
 #### Data Access Layer
 *   DAO berbasis SQLite digantikan oleh **Repositories** yang menggunakan **Appwrite SDK**.
-*   Menyembunyikan detail implementasi Appwrite, seperti nama koleksi dan penanganan ID dokumen. Contoh: `ItemRepository` akan memanggil `databases.createDocument(...)` dari Appwrite SDK.
-
----
-
-## 3. Desain Komponen Rinci
-
-### 3.1 Presentation Layer
-
-**Halaman (Pages) Baru/Diubah:**
-*   `SplashScreenPage`: Halaman awal untuk memeriksa apakah ada sesi login yang aktif. Jika ya, arahkan ke dashboard. Jika tidak, arahkan ke halaman login.
-*   `LoginPage`: Menampilkan form input email dan password, serta tombol untuk login dan registrasi.
-*   `SettingsPage`: Menampilkan informasi pengguna (nama/email) dan tombol Logout. Menghilangkan semua UI terkait backup/restore.
-
-### 3.2 Business Logic Layer (Services)
-
-**Services Baru/Diubah:**
-*   `AuthService`: Mengelola alur kerja autentikasi (registrasi, login, logout) menggunakan email/password. Memanggil `AuthRepository` untuk berinteraksi dengan Appwrite.
-*   `ItemService`, `TransactionService`, dll.: Setiap metode yang mengakses data kini memerlukan `userId` atau mengambilnya dari state global untuk memfilter data di Appwrite.
-*   `BackupService`: **Dihapus**.
-
-### 3.3 Data Access Layer
-
-**Repositories Baru/Diubah:**
-*   `AuthRepository`: Implementasi untuk registrasi (`account.create()`), login (`account.createEmailSession()`), dan logout (`account.deleteSession()`) menggunakan Appwrite SDK.
-*   `ItemRepository`: Implementasi CRUD ke koleksi `items` di Appwrite, menggunakan filter (`Query.equal('userId', ...)`) untuk memastikan isolasi data.
-*   *(Semua DAO dan repository berbasis sqflite **dihapus**)*.
+*   Setiap repository (misal, `ItemRepository`) akan bertanggung jawab untuk membuat dokumen dengan **izin akses (permissions)** yang benar, yang mengikat data ke `userId` pemilik.
+*   Saat mengambil data, keamanan utama dijamin oleh Appwrite yang secara otomatis memfilter dokumen berdasarkan izin baca pengguna. Penggunaan *query* seperti `Query.equal('userId', ...)` bersifat sekunder untuk optimasi.
 
 ---
 
@@ -108,11 +84,12 @@ graph TD
 Database menggunakan **Appwrite Databases**. Data diorganisir dalam *collections* (mirip tabel) dan *documents* (mirip baris).
 
 ### Skema Koleksi
-Sesuai dengan ERD yang diperbarui, koleksi utama adalah `users`, `stores`, `items`, `categories`, `transactions`, dan `activity_logs`. Setiap koleksi (kecuali `users`) akan memiliki atribut `userId` dan/atau `storeId` untuk relasi dan keamanan.
+Sesuai dengan ERD yang diperbarui, setiap koleksi data utama (misalnya `items`, `categories`) akan memiliki atribut `userId` untuk menunjukkan kepemilikan.
 
 ### Aturan Akses (Permissions)
-*   Setiap dokumen yang dibuat akan diberi *permission* pada level dokumen.
-*   Contoh: Dokumen di koleksi `items` akan memiliki permission `read("user:USER_ID")` dan `write("user:USER_ID")`. Ini memastikan hanya pengguna yang membuat data yang dapat membaca dan memodifikasinya.
+*   Keamanan dan isolasi data dijamin dengan menerapkan **izin akses level dokumen (document-level permissions)** pada saat dokumen dibuat.
+*   Setiap dokumen akan diberi izin eksplisit hanya untuk pengguna yang membuatnya. Contoh: `Permission.read("user:USER_ID")`, `Permission.update("user:USER_ID")`, dan `Permission.delete("user:USER_ID")`.
+*   Ini adalah mekanisme keamanan utama untuk memastikan pengguna tidak dapat mengakses data milik pengguna lain.
 
 ---
 
