@@ -109,6 +109,10 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 - `name` (TEXT, NOT NULL)
 - `description` (TEXT)
 - `quantity` (INTEGER, NOT NULL, default 0)
+- `min_quantity` (INTEGER, NOT NULL, default 10)
+- `unit` (TEXT, NOT NULL, default 'Pcs')
+- `purchase_price` (FLOAT, NOT NULL, default 0)
+- `sale_price` (FLOAT, NOT NULL, default 0)
 - `categoryId` (TEXT, opsional)
 - `imageId` (FK ke Appwrite Storage, opsional)
 

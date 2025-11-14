@@ -1,19 +1,8 @@
 import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart';
+import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
-
-
-
-
-
-
-
-
-
-
-
-
 
 class _PlaceholderItem {
   final String nama;
@@ -99,7 +88,10 @@ class HomePage extends ConsumerWidget {
               title: const Text('Barang'),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                // Navigate to Barang page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ItemListPage()),
+                );
               },
             ),
             ListTile(

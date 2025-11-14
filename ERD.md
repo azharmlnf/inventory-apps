@@ -22,6 +22,9 @@ erDiagram
         string description
         int quantity
         int min_quantity
+        string unit
+        float purchasePrice
+        float salePrice
         string imageId "Appwrite File ID"
     }
 
