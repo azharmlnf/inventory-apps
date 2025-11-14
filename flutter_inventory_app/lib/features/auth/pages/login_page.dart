@@ -14,6 +14,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,30 +23,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      ref.read(authControllerProvider.notifier).signIn(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
+      setState(() {
+        _isLoading = true;
+      });
+      try {
+        await ref.read(authControllerProvider.notifier).signIn(
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+            );
+        // Navigation will be handled by the AuthChecker
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
           );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
-      if (next.status == AuthStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage ?? 'Login Failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-
-    final authState = ref.watch(authControllerProvider);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
       body: Center(
@@ -95,7 +104,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-                authState.status == AuthStatus.loading
+                _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
                         onPressed: _submit,

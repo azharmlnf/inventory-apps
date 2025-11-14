@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
-import 'package:flutter_inventory_app/presentation/providers/category_provider.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 
 class CategoryListPage extends ConsumerWidget {
   const CategoryListPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoriesAsyncValue = ref.watch(categoriesProvider);
+    final categoriesAsyncValue = ref.watch(categoryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -73,7 +73,7 @@ class CategoryListPage extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                ref.read(categoriesProvider.notifier).addCategory(controller.text);
+                ref.read(categoryProvider.notifier).addCategory(name: controller.text);
                 Navigator.pop(context);
               }
             },
@@ -102,7 +102,7 @@ class CategoryListPage extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               if (controller.text.isNotEmpty && controller.text != category.name) {
-                ref.read(categoriesProvider.notifier).updateCategory(category, controller.text);
+                ref.read(categoryProvider.notifier).updateCategory(categoryId: category.id, name: controller.text);
                 Navigator.pop(context);
               }
             },
@@ -126,7 +126,7 @@ class CategoryListPage extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(categoriesProvider.notifier).deleteCategory(category.id);
+              ref.read(categoryProvider.notifier).deleteCategory(categoryId: category.id);
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

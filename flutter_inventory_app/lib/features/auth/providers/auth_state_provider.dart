@@ -59,13 +59,14 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> signIn(String email, String password) async {
-    state = state.copyWith(status: AuthStatus.loading);
+    // Don't set global loading state. Let the UI handle its own loading state.
     try {
       await _authRepository.signIn(email: email, password: password);
       final user = await _authRepository.getCurrentUser();
-      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user, errorMessage: null);
     } catch (e) {
-      state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
+      // Rethrow the error to be caught by the UI.
+      rethrow;
     }
   }
 

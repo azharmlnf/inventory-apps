@@ -12,7 +12,7 @@
     *   [x] Implementasikan alur login pengguna dengan email dan password Appwrite (`account.createEmailSession()`).
     *   [x] Implementasikan alur Logout (`account.deleteSession()`).
     *   [x] Buat `SplashScreen` untuk mengarahkan pengguna berdasarkan status login.
-    *   [ ] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login/registrasi manual.
+    *   [x] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login/registrasi manual.
 
 #### Minggu 2: Implementasi CRUD Dasar (Online)
 *   **Setup Appwrite Collections:**
