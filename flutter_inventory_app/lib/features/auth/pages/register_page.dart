@@ -58,7 +58,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -68,75 +67,82 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Create Account',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                  textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Text(
+                    'Buat Akun Baru',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                  decoration: InputDecoration(
+                    labelText: 'Nama Lengkap',
+                    prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Mohon masukkan nama Anda';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty || !value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return 'Mohon masukkan email yang valid';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
                   ),
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty || value.length < 8) {
-                      return 'Password must be at least 8 characters long';
+                      return 'Password minimal 8 karakter';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 30),
                 authState.status == AuthStatus.loading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
                         onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Register'),
+                        child: const Text('Daftar'),
                       ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
                             ref.read(authControllerProvider.notifier).resetStateToInitial();
                             Navigator.of(context).pop();
                           },
-                  child: const Text('Already have an account? Login'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Sudah punya akun? Login'),
                 ),
               ],
             ),

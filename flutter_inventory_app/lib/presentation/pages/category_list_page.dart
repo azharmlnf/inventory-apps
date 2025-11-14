@@ -20,22 +20,29 @@ class CategoryListPage extends ConsumerWidget {
             return const Center(child: Text('Belum ada kategori. Tambahkan satu!'));
           }
           return ListView.builder(
+            padding: const EdgeInsets.all(12.0),
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 child: ListTile(
-                  title: Text(category.name),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  title: Text(
+                    category.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit),
+                        icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
                         onPressed: () => _showEditCategoryDialog(context, ref, category),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete),
+                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                         onPressed: () => _confirmDeleteCategory(context, ref, category),
                       ),
                     ],
@@ -60,7 +67,8 @@ class CategoryListPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tambah Kategori Baru'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Tambah Kategori Baru', style: Theme.of(context).textTheme.titleLarge),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(hintText: 'Nama Kategori'),
@@ -68,7 +76,7 @@ class CategoryListPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -89,7 +97,8 @@ class CategoryListPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Kategori'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Edit Kategori', style: Theme.of(context).textTheme.titleLarge),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(hintText: 'Nama Kategori'),
@@ -97,7 +106,7 @@ class CategoryListPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -117,19 +126,20 @@ class CategoryListPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Kategori'),
-        content: Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Hapus Kategori', style: Theme.of(context).textTheme.titleLarge),
+        content: Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?', style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           ),
           ElevatedButton(
             onPressed: () {
               ref.read(categoryProvider.notifier).deleteCategory(categoryId: category.id);
               Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],

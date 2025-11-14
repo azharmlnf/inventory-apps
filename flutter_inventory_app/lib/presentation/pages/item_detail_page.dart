@@ -29,7 +29,7 @@ class ItemDetailPage extends ConsumerWidget {
         title: Text(item.name),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onPrimary),
             tooltip: 'Edit Barang',
             onPressed: () {
               Navigator.of(context).push(
@@ -45,30 +45,48 @@ class ItemDetailPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16.0),
         children: [
           _buildDetailCard(
+            context,
             'Informasi Umum',
             [
-              _buildDetailRow('Nama', item.name),
+              _buildDetailRow(context, 'Nama', item.name),
               if (item.brand != null && item.brand!.isNotEmpty)
-                _buildDetailRow('Merek', item.brand!),
+                _buildDetailRow(context, 'Merek', item.brand!),
               if (item.description != null && item.description!.isNotEmpty)
-                _buildDetailRow('Deskripsi', item.description!),
-              _buildDetailRow('Kategori', categoryName),
+                _buildDetailRow(context, 'Deskripsi', item.description!),
+              _buildDetailRow(context, 'Kategori', categoryName),
             ],
           ),
           const SizedBox(height: 16),
           _buildDetailCard(
+            context,
             'Informasi Stok',
             [
-              _buildDetailRow('Kuantitas', '${item.quantity} ${item.unit}'),
-              _buildDetailRow('Batas Stok Rendah', '${item.minQuantity} ${item.unit}'),
+              _buildDetailRow(context, 'Kuantitas', '${item.quantity} ${item.unit}'),
+              _buildDetailRow(context, 'Batas Stok Rendah', '${item.minQuantity} ${item.unit}'),
+              if (item.quantity <= item.minQuantity)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Peringatan: Stok Rendah!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 16),
           _buildDetailCard(
+            context,
             'Informasi Harga',
             [
-              _buildDetailRow('Harga Beli', 'Rp ${item.purchasePrice?.toStringAsFixed(0) ?? '0'}'),
-              _buildDetailRow('Harga Jual', 'Rp ${item.salePrice?.toStringAsFixed(0) ?? '0'}'),
+              _buildDetailRow(context, 'Harga Beli', 'Rp ${item.purchasePrice?.toStringAsFixed(0) ?? '0'}'),
+              _buildDetailRow(context, 'Harga Jual', 'Rp ${item.salePrice?.toStringAsFixed(0) ?? '0'}'),
             ],
           ),
         ],
@@ -76,10 +94,10 @@ class ItemDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailCard(String title, List<Widget> children) {
+  Widget _buildDetailCard(BuildContext context, String title, List<Widget> children) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -87,7 +105,7 @@ class ItemDetailPage extends ConsumerWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const Divider(height: 20, thickness: 1),
             ...children,
@@ -97,7 +115,7 @@ class ItemDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -106,14 +124,14 @@ class ItemDetailPage extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
         ],

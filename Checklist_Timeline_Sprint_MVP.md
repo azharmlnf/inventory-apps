@@ -16,11 +16,11 @@
 
 #### Minggu 2: Implementasi CRUD Dasar (Online)
 *   **Setup Appwrite Collections:**
-    *   [ ] Definisikan dan buat koleksi di Appwrite: `categories`, `transactions`, `activity_logs` dengan atribut dan permission yang sesuai.
+    *   [x] Definisikan dan buat koleksi di Appwrite: `categories`, `transactions`, `activity_logs` dengan atribut dan permission yang sesuai.
 *   **CRUD Kategori (Online):**
-    *   [ ] Buat `CategoryRepository` yang terhubung ke Appwrite.
-    *   [ ] Implementasikan service dan UI (Widget) untuk operasi CRUD `Category` yang terikat pada `userId`.
-    *   [ ] Integrasikan state management (Riverpod) untuk data kategori dari Appwrite.
+    *   [x] Buat `CategoryRepository` yang terhubung ke Appwrite.
+    *   [x] Implementasikan service dan UI (Widget) untuk operasi CRUD `Category` yang terikat pada `userId`.
+    *   [x] Integrasikan state management (Riverpod) untuk data kategori dari Appwrite.
 *   **CRUD Transaksi (Online):**
     *   [ ] Buat `TransactionRepository` yang terhubung ke Appwrite.
     *   [ ] Implementasikan service dan UI (Widget) untuk operasi CRUD `Transaction`, memastikan setiap transaksi terikat pada `userId`.
@@ -29,16 +29,16 @@
 
 #### Minggu 3: Implementasi CRUD Barang & Stok (Online)
 *   **Setup Appwrite Collection:**
-    *   [ ] Definisikan dan buat koleksi `items` di Appwrite.
+    *   [x] Definisikan dan buat koleksi `items` di Appwrite.
 *   **CRUD Barang (Online):**
-    *   [ ] Buat `ItemRepository` yang terhubung ke Appwrite.
-    *   [ ] Implementasikan UI (`ItemListPage`, `ItemFormPage`) untuk operasi CRUD `Item`.
+    *   [x] Buat `ItemRepository` yang terhubung ke Appwrite.
+    *   [x] Implementasikan UI (`ItemListPage`, `ItemFormPage`) untuk operasi CRUD `Item`.
     *   [ ] Pastikan kuantitas barang di Appwrite diperbarui secara otomatis setelah transaksi.
-    *   [ ] Integrasikan state management (Riverpod) untuk data `Item`.
+    *   [x] Integrasikan state management (Riverpod) untuk data `Item`.
 
 #### Minggu 4: Fitur Notifikasi & Pelaporan Dasar
 *   **Pengingat Restock:**
-    *   [ ] Implementasikan logika di sisi klien untuk mendeteksi stok rendah dari data yang diambil dari Appwrite.
+    *   [x] Implementasikan logika di sisi klien untuk mendeteksi stok rendah dari data yang diambil dari Appwrite.
     *   [ ] Integrasi `flutter_local_notifications` untuk menampilkan notifikasi stok rendah.
     *   [ ] (Opsional) Jelajahi Appwrite Functions untuk push notification di masa depan.
 *   **Pelaporan Sederhana:**
@@ -70,7 +70,7 @@
     *   [ ] Lakukan User Acceptance Testing (UAT).
 *   **Stabilisasi & Optimasi:**
     *   [ ] Perbaikan bug berdasarkan hasil testing.
-    *   [ ] Optimasi query Appwrite dan responsivitas UI.
+    *   [x] Optimasi query Appwrite dan responsivitas UI.
 *   **Dokumentasi & Rilis:**
     *   [ ] Finalisasi dokumentasi teknis.
     *   [ ] Siapkan aset aplikasi dan konfigurasi untuk rilis di App Store/Play Store.

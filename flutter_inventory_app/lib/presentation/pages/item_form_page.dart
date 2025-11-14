@@ -72,14 +72,15 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           final continueSave = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Barang Sudah Ada'),
-              content: Text('Barang dengan nama "$itemName" sudah ada. Anda yakin ingin tetap menyimpannya?'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text('Barang Sudah Ada', style: Theme.of(context).textTheme.titleLarge),
+              content: Text('Barang dengan nama "$itemName" sudah ada. Anda yakin ingin tetap menyimpannya?', style: Theme.of(context).textTheme.bodyMedium),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Batal'),
+                  child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   child: const Text('Ya, Tetap Simpan'),
                 ),
@@ -188,7 +189,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                       child: Text(isEditMode ? 'Simpan Perubahan' : 'Tambah Barang'),
                     ),
                   ],
@@ -206,7 +206,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
         ),
         validator: (value) {
           if (validationMsg != null && (value == null || value.isEmpty)) {
@@ -225,7 +224,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
         ),
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -249,7 +247,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         value: _selectedCategoryId,
         decoration: const InputDecoration(
           labelText: 'Kategori',
-          border: OutlineInputBorder(),
         ),
         hint: const Text('Pilih Kategori'),
         items: [
