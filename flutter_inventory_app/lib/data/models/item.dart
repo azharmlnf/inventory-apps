@@ -6,12 +6,13 @@ class Item {
   final String id;          // ID unik dokumen dari Appwrite ($id)
   final String userId;      // ID pengguna yang memiliki barang ini
   final String name;        // Nama barang
+  final String? brand;      // Merek barang (opsional)
   final String? description; // Deskripsi barang (opsional)
   final int quantity;       // Kuantitas stok saat ini
   final int minQuantity;    // Batas minimum stok untuk notifikasi
   final String unit;        // Satuan barang (Pcs, Box, dll)
-  final double purchasePrice; // Harga beli
-  final double salePrice;     // Harga jual
+  final double? purchasePrice; // Harga beli (opsional)
+  final double? salePrice;     // Harga jual (opsional)
   final String? categoryId;   // ID kategori (opsional)
   final String? imageId;      // ID file gambar di Appwrite Storage (opsional)
 
@@ -19,12 +20,13 @@ class Item {
     required this.id,
     required this.userId,
     required this.name,
+    this.brand,
     this.description,
     required this.quantity,
     required this.minQuantity,
     required this.unit,
-    required this.purchasePrice,
-    required this.salePrice,
+    this.purchasePrice,
+    this.salePrice,
     this.categoryId,
     this.imageId,
   });
@@ -35,12 +37,13 @@ class Item {
       id: document.$id,
       userId: document.data['userId'],
       name: document.data['name'] ?? '',
+      brand: document.data['brand'],
       description: document.data['description'],
       quantity: int.tryParse(document.data['quantity']?.toString() ?? '0') ?? 0,
       minQuantity: int.tryParse(document.data['min_quantity']?.toString() ?? '0') ?? 0,
       unit: document.data['unit'] ?? 'Pcs',
-      purchasePrice: double.tryParse(document.data['purchase_price']?.toString() ?? '0.0') ?? 0.0,
-      salePrice: double.tryParse(document.data['sale_price']?.toString() ?? '0.0') ?? 0.0,
+      purchasePrice: double.tryParse(document.data['purchase_price']?.toString() ?? ''),
+      salePrice: double.tryParse(document.data['sale_price']?.toString() ?? ''),
       categoryId: document.data['categoryId'],
       imageId: document.data['imageId'],
     );
@@ -48,17 +51,23 @@ class Item {
 
   /// Mengonversi instance Item menjadi Map<String, dynamic> untuk dikirim ke Appwrite.
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> json = {
       'userId': userId,
       'name': name,
+      'brand': brand,
       'description': description,
       'quantity': quantity,
       'min_quantity': minQuantity,
       'unit': unit,
-      'purchase_price': purchasePrice,
-      'sale_price': salePrice,
       'categoryId': categoryId,
       'imageId': imageId,
     };
+    if (purchasePrice != null) {
+      json['purchase_price'] = purchasePrice;
+    }
+    if (salePrice != null) {
+      json['sale_price'] = salePrice;
+    }
+    return json;
   }
 }

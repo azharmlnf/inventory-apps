@@ -1,5 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
@@ -29,10 +30,19 @@ class ItemService {
     }
   }
 
-  /// Mengambil semua item milik pengguna yang sedang login.
-  Future<List<Item>> getItems() async {
+  /// Mengambil semua item milik pengguna yang sedang login, dengan opsi pencarian, filter, dan sortir.
+  Future<List<Item>> getItems({
+    String? searchQuery,
+    String? categoryId,
+    ItemSortType? sortType,
+  }) async {
     final userId = await _getCurrentUserId();
-    return _itemRepository.getItems(userId);
+    return _itemRepository.getItems(
+      userId,
+      searchQuery: searchQuery,
+      categoryId: categoryId,
+      sortType: sortType,
+    );
   }
 
   /// Membuat item baru untuk pengguna yang sedang login.
@@ -43,6 +53,7 @@ class ItemService {
       id: '', // ID akan dibuat oleh repository
       userId: userId,
       name: item.name,
+      brand: item.brand,
       description: item.description,
       quantity: item.quantity,
       minQuantity: item.minQuantity,
@@ -65,5 +76,11 @@ class ItemService {
   /// Menghapus item.
   Future<void> deleteItem(String itemId) async {
     return _itemRepository.deleteItem(itemId);
+  }
+
+  /// Memeriksa apakah item dengan nama yang sama sudah ada.
+  Future<bool> itemExists({required String name}) async {
+    final userId = await _getCurrentUserId();
+    return _itemRepository.itemExists(name: name, userId: userId);
   }
 }

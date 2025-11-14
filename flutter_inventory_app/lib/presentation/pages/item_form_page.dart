@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
+import 'package:flutter_inventory_app/domain/services/item_service.dart';
 
 class ItemFormPage extends ConsumerStatefulWidget {
   final Item? item;
@@ -18,6 +20,7 @@ class ItemFormPage extends ConsumerStatefulWidget {
 class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _brandController;
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _minQuantityController;
@@ -32,18 +35,20 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     super.initState();
     final item = widget.item;
     _nameController = TextEditingController(text: item?.name ?? '');
+    _brandController = TextEditingController(text: item?.brand ?? '');
     _descriptionController = TextEditingController(text: item?.description ?? '');
     _quantityController = TextEditingController(text: item?.quantity.toString() ?? '0');
     _minQuantityController = TextEditingController(text: item?.minQuantity.toString() ?? '10');
     _unitController = TextEditingController(text: item?.unit ?? 'Pcs');
-    _purchasePriceController = TextEditingController(text: item?.purchasePrice.toStringAsFixed(0) ?? '0');
-    _salePriceController = TextEditingController(text: item?.salePrice.toStringAsFixed(0) ?? '0');
+    _purchasePriceController = TextEditingController(text: item?.purchasePrice?.toStringAsFixed(0) ?? '');
+    _salePriceController = TextEditingController(text: item?.salePrice?.toStringAsFixed(0) ?? '');
     _selectedCategoryId = item?.categoryId;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _brandController.dispose();
     _descriptionController.dispose();
     _quantityController.dispose();
     _minQuantityController.dispose();
@@ -57,26 +62,66 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
+      final isEditMode = widget.item != null;
+      final itemName = _nameController.text.trim();
+
+      // Cek duplikasi hanya jika ini adalah item baru
+      if (!isEditMode) {
+        final exists = await ref.read(itemServiceProvider).itemExists(name: itemName);
+        if (mounted && exists) {
+          final continueSave = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Barang Sudah Ada'),
+              content: Text('Barang dengan nama "$itemName" sudah ada. Anda yakin ingin tetap menyimpannya?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Ya, Tetap Simpan'),
+                ),
+              ],
+            ),
+          );
+          // Jika user menekan batal, hentikan proses
+          if (continueSave == null || !continueSave) {
+            setState(() => _isLoading = false);
+            return;
+          }
+        }
+      }
+
       final newItem = Item(
         id: widget.item?.id ?? '',
         userId: widget.item?.userId ?? '', // userId will be set by the service
-        name: _nameController.text,
-        description: _descriptionController.text,
+        name: itemName,
+        brand: _brandController.text.isNotEmpty ? _brandController.text.trim() : null,
+        description: _descriptionController.text.trim(),
         quantity: int.tryParse(_quantityController.text) ?? 0,
         minQuantity: int.tryParse(_minQuantityController.text) ?? 0,
-        unit: _unitController.text,
-        purchasePrice: double.tryParse(_purchasePriceController.text) ?? 0.0,
-        salePrice: double.tryParse(_salePriceController.text) ?? 0.0,
+        unit: _unitController.text.trim(),
+        purchasePrice: double.tryParse(_purchasePriceController.text),
+        salePrice: double.tryParse(_salePriceController.text),
         categoryId: _selectedCategoryId,
       );
 
       try {
-        if (widget.item == null) {
-          await ref.read(itemProvider.notifier).addItem(newItem);
-        } else {
+        if (isEditMode) {
           await ref.read(itemProvider.notifier).updateItem(newItem);
+        } else {
+          await ref.read(itemProvider.notifier).addItem(newItem);
         }
+
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Barang berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -112,6 +157,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
+                    _buildTextField(_brandController, 'Merek (Opsional)', null),
                     _buildTextField(_descriptionController, 'Deskripsi (Opsional)', null, maxLines: 3),
                     _buildTextField(_unitController, 'Unit (e.g., Pcs, Box)', 'Unit tidak boleh kosong'),
                     Row(
@@ -123,9 +169,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     ),
                     Row(
                       children: [
-                        Expanded(child: _buildNumericField(_purchasePriceController, 'Harga Beli')),
+                        Expanded(child: _buildNumericField(_purchasePriceController, 'Harga Beli', isOptional: true)),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildNumericField(_salePriceController, 'Harga Jual')),
+                        Expanded(child: _buildNumericField(_salePriceController, 'Harga Jual', isOptional: true)),
                       ],
                     ),
                     categoriesAsync.when(
@@ -172,7 +218,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     );
   }
 
-  Widget _buildNumericField(TextEditingController controller, String label) {
+  Widget _buildNumericField(TextEditingController controller, String label, {bool isOptional = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -184,10 +230,10 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         validator: (value) {
-          if (value == null || value.isEmpty) {
+          if (!isOptional && (value == null || value.isEmpty)) {
             return 'Wajib diisi';
           }
-          if (int.tryParse(value) == null) {
+          if (value != null && value.isNotEmpty && int.tryParse(value) == null) {
             return 'Masukkan angka valid';
           }
           return null;

@@ -107,6 +107,7 @@ Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang data
 - id (PK, Appwrite Document ID)
 - `userId` (FK ke Users, Wajib)
 - `name` (TEXT, NOT NULL)
+- `brand` (TEXT, opsional)
 - `description` (TEXT)
 - `quantity` (INTEGER, NOT NULL, default 0)
 - `min_quantity` (INTEGER, NOT NULL, default 10)
