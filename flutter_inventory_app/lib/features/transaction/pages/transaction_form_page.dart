@@ -76,7 +76,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       final newTransaction = Transaction(
         id: widget.transaction?.id ?? '',
         userId: widget.transaction?.userId ?? '', // userId will be set by the service
-        itemId: _selectedItemId, // Removed !
+        itemId: _selectedItemId!, // Ditambahkan '!' karena sudah divalidasi tidak null
         type: _selectedType!,
         quantity: int.tryParse(_quantityController.text) ?? 1,
         date: _selectedTransactionDate,

@@ -41,15 +41,12 @@ class TransactionListPage extends ConsumerWidget {
                 // Find item name from itemsAsyncValue
                 String itemName = 'Item Tidak Ditemukan';
                 itemsAsyncValue.whenData((items) {
-                  print('Transaction Item ID: ${transaction.itemId}');
-                  print('Available Item IDs: ${items.map((e) => e.id).toList()}');
                   try {
                     if (transaction.itemId != null) {
                       final foundItem = items.firstWhere((item) => item.id == transaction.itemId);
                       itemName = foundItem.name;
                     }
                   } catch (e) {
-                    print('Error: Item with ID ${transaction.itemId} not found in itemProvider. $e');
                     // Item not found, keep default name
                   }
                 });

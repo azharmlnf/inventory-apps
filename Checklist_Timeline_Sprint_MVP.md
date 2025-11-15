@@ -22,10 +22,10 @@
     *   [x] Implementasikan service dan UI (Widget) untuk operasi CRUD `Category` yang terikat pada `userId`.
     *   [x] Integrasikan state management (Riverpod) untuk data kategori dari Appwrite.
 *   **CRUD Transaksi (Online):**
-    *   [ ] Buat `TransactionRepository` yang terhubung ke Appwrite.
-    *   [ ] Implementasikan service dan UI (Widget) untuk operasi CRUD `Transaction`, memastikan setiap transaksi terikat pada `userId`.
+    *   [x] Buat `TransactionRepository` yang terhubung ke Appwrite.
+    *   [x] Implementasikan service dan UI (Widget) untuk operasi CRUD `Transaction`, memastikan setiap transaksi terikat pada `userId`.
 *   **Riwayat Aktivitas (Online):**
-    *   [ ] Implementasikan service untuk mencatat `ActivityLog` di Appwrite setiap kali ada aksi penting.
+    *   [x] Implementasikan service untuk mencatat `ActivityLog` di Appwrite setiap kali ada aksi penting.
 
 #### Minggu 3: Implementasi CRUD Barang & Stok (Online)
 *   **Setup Appwrite Collection:**
@@ -33,7 +33,7 @@
 *   **CRUD Barang (Online):**
     *   [x] Buat `ItemRepository` yang terhubung ke Appwrite.
     *   [x] Implementasikan UI (`ItemListPage`, `ItemFormPage`) untuk operasi CRUD `Item`.
-    *   [ ] Pastikan kuantitas barang di Appwrite diperbarui secara otomatis setelah transaksi.
+    *   [x] Pastikan kuantitas barang di Appwrite diperbarui secara otomatis setelah transaksi.
     *   [x] Integrasikan state management (Riverpod) untuk data `Item`.
 
 #### Minggu 4: Fitur Notifikasi & Pelaporan Dasar

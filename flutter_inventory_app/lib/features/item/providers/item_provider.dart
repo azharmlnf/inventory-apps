@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:appwrite/models.dart' as models;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
-import 'package:flutter_inventory_app/domain/services/item_service.dart';
+import 'package:flutter_inventory_app/domain/services/item_service.dart'; // <-- Needed for ref.read(itemServiceProvider)
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart'; // <-- Needed for itemServiceProvider
 import 'package:flutter_inventory_app/features/item/providers/item_search_provider.dart';
 
 /// AsyncNotifierProvider untuk state management item.
@@ -91,7 +91,14 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   Future<void> deleteItem(String itemId) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await ref.read(itemServiceProvider).deleteItem(itemId);
+      // Ambil nama item dari state saat ini sebelum menghapus.
+      final items = state.value ?? [];
+      final itemToDelete = items.firstWhere(
+        (item) => item.id == itemId,
+        orElse: () => throw Exception('Item tidak ditemukan untuk dihapus.'),
+      );
+
+      await ref.read(itemServiceProvider).deleteItem(itemId, itemToDelete.name);
       ref.invalidateSelf();
       return future;
     });

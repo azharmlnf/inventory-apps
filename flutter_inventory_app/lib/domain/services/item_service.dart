@@ -1,24 +1,17 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
+import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
-
-/// Provider untuk ItemService.
-final itemServiceProvider = Provider<ItemService>((ref) {
-  final itemRepository = ref.watch(itemRepositoryProvider);
-  final account = ref.watch(appwriteAccountProvider);
-  return ItemService(itemRepository, account);
-});
 
 /// Service Layer untuk mengelola logika bisnis terkait item.
 class ItemService {
   final ItemRepository _itemRepository;
   final Account _account;
+  final ActivityLogService _activityLogService;
 
-  ItemService(this._itemRepository, this._account);
+  ItemService(this._itemRepository, this._account, this._activityLogService);
 
   /// Mengambil ID pengguna yang sedang login.
   Future<String> _getCurrentUserId() async {
@@ -63,19 +56,39 @@ class ItemService {
       categoryId: item.categoryId,
       imageId: item.imageId,
     );
-    return _itemRepository.createItem(newItem);
+    final doc = await _itemRepository.createItem(newItem);
+
+    // Record activity
+    await _activityLogService.recordActivity(
+      description: 'Membuat item baru: ${item.name}',
+      itemId: doc.$id,
+    );
+
+    return doc;
   }
 
   /// Memperbarui item yang sudah ada.
   Future<Document> updateItem(Item item) async {
-    // Di sini, kita asumsikan repository sudah mengamankan update
-    // berdasarkan permission di Appwrite, jadi kita tidak perlu cek userId lagi.
-    return _itemRepository.updateItem(item);
+    final doc = await _itemRepository.updateItem(item);
+
+    // Record activity
+    await _activityLogService.recordActivity(
+      description: 'Memperbarui item: ${item.name}',
+      itemId: item.id,
+    );
+
+    return doc;
   }
 
   /// Menghapus item.
-  Future<void> deleteItem(String itemId) async {
-    return _itemRepository.deleteItem(itemId);
+  Future<void> deleteItem(String itemId, String itemName) async {
+    await _itemRepository.deleteItem(itemId);
+
+    // Record activity
+    await _activityLogService.recordActivity(
+      description: 'Menghapus item: $itemName',
+      itemId: itemId,
+    );
   }
 
   /// Memeriksa apakah item dengan nama yang sama sudah ada.

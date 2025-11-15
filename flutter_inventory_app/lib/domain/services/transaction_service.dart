@@ -1,23 +1,24 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as appwrite_models;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
+import 'package:flutter_inventory_app/data/models/item.dart';
+import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
+import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/data/repositories/transaction_repository.dart';
-
-/// Provider untuk TransactionService.
-final transactionServiceProvider = Provider<TransactionService>((ref) {
-  final transactionRepository = ref.watch(transactionRepositoryProvider);
-  final account = ref.watch(appwriteAccountProvider);
-  return TransactionService(transactionRepository, account);
-});
 
 /// Service Layer untuk mengelola logika bisnis terkait transaksi.
 class TransactionService {
   final TransactionRepository _transactionRepository;
+  final ItemRepository _itemRepository;
   final Account _account;
+  final ActivityLogService _activityLogService;
 
-  TransactionService(this._transactionRepository, this._account);
+  TransactionService(
+    this._transactionRepository,
+    this._itemRepository,
+    this._account,
+    this._activityLogService,
+  );
 
   /// Mengambil ID pengguna yang sedang login.
   Future<String> _getCurrentUserId() async {
@@ -41,10 +42,48 @@ class TransactionService {
       date: transaction.date,
       note: transaction.note,
     );
-    return _transactionRepository.createTransaction(newTransaction);
+
+    // 1. Create the transaction document
+    final doc = await _transactionRepository.createTransaction(newTransaction);
+
+    // 2. Get the item to update its quantity
+    final itemToUpdate = await _itemRepository.getItemById(transaction.itemId);
+    int newQuantity;
+    if (transaction.type == TransactionType.IN) {
+      newQuantity = itemToUpdate.quantity + transaction.quantity;
+    } else {
+      newQuantity = itemToUpdate.quantity - transaction.quantity;
+    }
+
+    // 3. Update the item's quantity
+    final updatedItem = Item(
+      id: itemToUpdate.id,
+      userId: itemToUpdate.userId,
+      name: itemToUpdate.name,
+      brand: itemToUpdate.brand,
+      description: itemToUpdate.description,
+      quantity: newQuantity, // Updated quantity
+      minQuantity: itemToUpdate.minQuantity,
+      unit: itemToUpdate.unit,
+      purchasePrice: itemToUpdate.purchasePrice,
+      salePrice: itemToUpdate.salePrice,
+      categoryId: itemToUpdate.categoryId,
+      imageId: itemToUpdate.imageId,
+    );
+    await _itemRepository.updateItem(updatedItem);
+
+    // 4. Record activity
+    final action = transaction.type == TransactionType.IN ? 'masuk' : 'keluar';
+    await _activityLogService.recordActivity(
+      description:
+          'Transaksi $action: ${transaction.quantity} ${itemToUpdate.unit} untuk item ${itemToUpdate.name}',
+      itemId: transaction.itemId,
+    );
+
+    return doc;
   }
 
-  /// Mengambil semua transaksi milik pengguna yang sedang login, dengan opsi filter.
+  // ... sisa method lainnya tidak berubah ...
   Future<List<Transaction>> getTransactions({
     String? itemId,
     TransactionType? type,
@@ -61,15 +100,19 @@ class TransactionService {
     );
   }
 
-  /// Memperbarui transaksi yang sudah ada.
   Future<appwrite_models.Document> updateTransaction(Transaction transaction) async {
-    // Di sini, kita asumsikan repository sudah mengamankan update
-    // berdasarkan permission di Appwrite, jadi kita tidak perlu cek userId lagi.
-    return _transactionRepository.updateTransaction(transaction);
+    final doc = await _transactionRepository.updateTransaction(transaction);
+    await _activityLogService.recordActivity(
+      description: 'Memperbarui transaksi untuk item ID: ${transaction.itemId}',
+      itemId: transaction.itemId,
+    );
+    return doc;
   }
 
-  /// Menghapus transaksi.
   Future<void> deleteTransaction(String transactionId) async {
-    return _transactionRepository.deleteTransaction(transactionId);
+    await _transactionRepository.deleteTransaction(transactionId);
+    await _activityLogService.recordActivity(
+      description: 'Menghapus transaksi ID: $transactionId',
+    );
   }
 }

@@ -129,4 +129,18 @@ class ItemRepository {
       return false;
     }
   }
+
+  /// Mengambil satu item berdasarkan ID-nya.
+  Future<Item> getItemById(String itemId) async {
+    try {
+      final doc = await _databases.getDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: AppConstants.itemsCollectionId,
+        documentId: itemId,
+      );
+      return Item.fromDocument(doc);
+    } on AppwriteException catch (e) {
+      throw e.message ?? 'Gagal mengambil data item.';
+    }
+  }
 }

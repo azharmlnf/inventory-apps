@@ -10,7 +10,7 @@ enum TransactionType {
 class Transaction {
   final String id;
   final String userId;
-  final String? itemId; // Changed to nullable
+  final String itemId; // Changed to non-nullable
   final TransactionType type;
   final int quantity;
   final DateTime date;
@@ -19,7 +19,7 @@ class Transaction {
   Transaction({
     required this.id,
     required this.userId,
-    this.itemId, // Changed to nullable
+    required this.itemId, // Changed to non-nullable
     required this.type,
     required this.quantity,
     required this.date,
@@ -28,7 +28,7 @@ class Transaction {
 
   /// Factory constructor untuk membuat instance Transaction dari Dokumen Appwrite.
   factory Transaction.fromDocument(appwrite_models.Document document) {
-    String? extractedItemId;
+    String extractedItemId;
     final itemIdData = document.data['itemId'];
     
     if (itemIdData is List && itemIdData.isNotEmpty) {
@@ -38,6 +38,8 @@ class Transaction {
         extractedItemId = firstItem;
       } else if (firstItem is Map<String, dynamic> && firstItem.containsKey('\$id')) {
         extractedItemId = firstItem['\$id'] as String;
+      } else {
+        throw Exception('Invalid itemId format in Appwrite document: $itemIdData');
       }
     } else if (itemIdData is String && itemIdData.isNotEmpty) {
       // If it's a direct string ID
@@ -45,6 +47,8 @@ class Transaction {
     } else if (itemIdData is Map<String, dynamic> && itemIdData.containsKey('\$id')) {
       // If it's a direct map (e.g., populated relationship)
       extractedItemId = itemIdData['\$id'] as String;
+    } else {
+      throw Exception('Missing or invalid itemId in Appwrite document: $itemIdData');
     }
 
     return Transaction(
@@ -62,15 +66,12 @@ class Transaction {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> json = {
       'userId': userId,
+      'itemId': itemId, // itemId is now non-nullable
       'type': type == TransactionType.IN ? 'IN' : 'OUT',
       'quantity': quantity,
       'date': date.toIso8601String(),
       'note': note,
     };
-    if (itemId != null && itemId!.isNotEmpty) {
-      print('Transaction toJson - itemId: $itemId'); // Debug print
-      json['itemId'] = itemId; // Send itemId as a plain string
-    }
     return json;
   }
 }
