@@ -70,4 +70,35 @@ class Item {
     }
     return json;
   }
+
+  /// Membuat salinan Item dengan perubahan opsional.
+  Item copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? brand,
+    String? description,
+    int? quantity,
+    int? minQuantity,
+    String? unit,
+    double? purchasePrice,
+    double? salePrice,
+    String? categoryId,
+    String? imageId,
+  }) {
+    return Item(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      description: description ?? this.description,
+      quantity: quantity ?? this.quantity,
+      minQuantity: minQuantity ?? this.minQuantity,
+      unit: unit ?? this.unit,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
+      salePrice: salePrice ?? this.salePrice,
+      categoryId: categoryId ?? this.categoryId,
+      imageId: imageId ?? this.imageId,
+    );
+  }
 }

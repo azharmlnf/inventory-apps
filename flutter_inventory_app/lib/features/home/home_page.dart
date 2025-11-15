@@ -1,3 +1,4 @@
+import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,10 @@ class HomePage extends ConsumerWidget {
               title: Text('Transaksi', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                // Navigate to Transaksi page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TransactionListPage()),
+                );
               },
             ),
             ListTile(
