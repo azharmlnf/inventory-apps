@@ -7,7 +7,7 @@ import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
-import 'package:flutter_inventory_app/domain/services/item_service.dart';
+
 
 class ItemFormPage extends ConsumerStatefulWidget {
   final Item? item;
@@ -124,6 +124,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               backgroundColor: Colors.green,
             ),
           );
+          ref.invalidate(itemsProvider); // Invalidate itemsProvider to refresh the list
           Navigator.of(context).pop();
         }
       } catch (e) {

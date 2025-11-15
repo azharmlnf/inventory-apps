@@ -1,6 +1,13 @@
 import 'package:flutter_inventory_app/data/repositories/activity_log_repository.dart';
 import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_log.dart' as domain;
+
+final activityLogServiceProvider = Provider<ActivityLogService>((ref) {
+  final activityLogRepository = ref.watch(activityLogRepositoryProvider);
+  final authRepository = ref.watch(authRepositoryProvider);
+  return ActivityLogService(activityLogRepository, authRepository);
+});
 
 class ActivityLogService {
   final ActivityLogRepository _activityLogRepository;

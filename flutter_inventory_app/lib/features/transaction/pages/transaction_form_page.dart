@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
-import 'package:flutter_inventory_app/features/transaction/providers/transaction_provider.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart'; // Added this import
+import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart'; // Added this import
 
 class TransactionFormPage extends ConsumerStatefulWidget {
   final Transaction? transaction;
@@ -85,9 +85,9 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
       try {
         if (isEditMode) {
-          await ref.read(transactionProvider.notifier).updateTransaction(newTransaction);
+          await ref.read(transactionsProvider.notifier).updateTransaction(newTransaction);
         } else {
-          await ref.read(transactionProvider.notifier).addTransaction(newTransaction);
+          await ref.read(transactionsProvider.notifier).addTransaction(newTransaction);
         }
 
         if (mounted) {
@@ -97,6 +97,8 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               backgroundColor: Colors.green,
             ),
           );
+          ref.invalidate(transactionsProvider); // Invalidate transactionsProvider to refresh the list
+          ref.invalidate(itemsProvider); // Invalidate itemsProvider as item quantities might have changed
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -116,7 +118,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.transaction != null;
-    final itemsAsync = ref.watch(itemProvider);
+    final itemsAsync = ref.watch(itemsProvider);
 
     return Scaffold(
       appBar: AppBar(

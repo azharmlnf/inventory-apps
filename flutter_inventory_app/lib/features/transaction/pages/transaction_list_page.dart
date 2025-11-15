@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart'; // To get item details
-import 'package:flutter_inventory_app/data/models/item.dart'; // To use Item model
+ // To use Item model
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart'; // For adding/editing transactions
 
 class TransactionListPage extends ConsumerWidget {

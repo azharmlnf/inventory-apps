@@ -1,17 +1,7 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/repositories/category_repository.dart';
-
-/// Provider untuk CategoryService.
-/// Memungkinkan akses ke CategoryService dari seluruh aplikasi.
-final categoryServiceProvider = Provider<CategoryService>((ref) {
-  final categoryRepository = ref.watch(categoryRepositoryProvider);
-  final account = ref.watch(appwriteAccountProvider);
-  return CategoryService(categoryRepository, account);
-});
 
 /// Service Layer untuk mengelola operasi bisnis terkait kategori.
 /// Bertanggung jawab untuk berinteraksi dengan CategoryRepository

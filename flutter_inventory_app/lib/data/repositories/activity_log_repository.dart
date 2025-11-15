@@ -1,6 +1,13 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter_inventory_app/core/app_constants.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/activity_log.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final activityLogRepositoryProvider = Provider<ActivityLogRepository>((ref) {
+  final databases = ref.watch(appwriteDatabaseProvider);
+  return ActivityLogRepository(databases);
+});
 
 class ActivityLogRepository {
   final Databases _databases;

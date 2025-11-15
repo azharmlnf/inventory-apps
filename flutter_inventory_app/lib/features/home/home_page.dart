@@ -5,40 +5,51 @@ import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/home/providers/dashboard_providers.dart';
+import 'package:flutter_inventory_app/data/models/transaction.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
-class _PlaceholderItem {
-  final String nama;
-  final int kuantitas;
-  final String unit;
+// Import providers yang diperlukan untuk refresh
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
+import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
+import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
 
-  _PlaceholderItem({required this.nama, required this.kuantitas, required this.unit});
-}
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
-
-  // Placeholder functions for data that will come from Appwrite
-  String getKategoriNama(String id) {
-    return 'Tidak Berkategori'; // Placeholder
-  }
-
-  _PlaceholderItem? getBarangById(String id) {
-    // In a real app, this would fetch data
-    return null; // Placeholder
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final currentUser = authState.user;
 
-    final totalJenisBarang = 0;
-    final stokAkanHabis = 0;
-    final transaksiHariIni = 0;
+    // Watch dashboard providers
+    final totalJenisBarangAsync = ref.watch(totalItemsCountProvider);
+    final lowStockItemsAsync = ref.watch(lowStockItemsProvider);
+    final transactionsTodayAsync = ref.watch(transactionsTodayProvider);
+    final latestTransactionsAsync = ref.watch(latestTransactionsProvider);
 
-    final lowStockItems = <_PlaceholderItem>[];
+    // Listen for auth state changes to refresh data
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if (previous?.user == null && next.user != null) {
+        // User logged in, refresh all data
+        ref.invalidate(itemsProvider);
+        ref.invalidate(categoriesProvider);
+        ref.invalidate(transactionsProvider);
+        ref.invalidate(activityLogsProvider);
+      } else if (previous?.user != null && next.user == null) {
+        // User logged out, clear data (optional, providers will handle this)
+      }
+    });
 
-    final latestTransactions = <Map<String, dynamic>>[];
+    // Initial data refresh when the widget is first built or dependencies change
+    // This ensures data is fresh when navigating back to the dashboard
+    ref.watch(itemsProvider.notifier).refreshItems();
+    ref.watch(categoriesProvider.notifier).refreshCategories();
+    ref.watch(transactionsProvider.notifier).refreshTransactions();
+    ref.watch(activityLogsProvider.notifier).refreshActivityLogs();
+
 
     return Scaffold(
       appBar: AppBar(
@@ -78,7 +89,7 @@ class HomePage extends ConsumerWidget {
               title: Text('Dashboard', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                // Already on dashboard, no action needed
+                // Already on dashboard, no action needed, data is refreshed by ref.watch above
               },
             ),
             ListTile(
@@ -86,6 +97,7 @@ class HomePage extends ConsumerWidget {
               title: Text('Barang', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
+                ref.invalidate(itemsProvider); // Invalidate to force refresh on next access
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ItemListPage()),
@@ -97,6 +109,7 @@ class HomePage extends ConsumerWidget {
               title: Text('Kategori', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
+                ref.invalidate(categoriesProvider); // Invalidate to force refresh on next access
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -109,6 +122,7 @@ class HomePage extends ConsumerWidget {
               title: Text('Transaksi', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
+                ref.invalidate(transactionsProvider); // Invalidate to force refresh on next access
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TransactionListPage()),
@@ -128,6 +142,7 @@ class HomePage extends ConsumerWidget {
               title: Text('Aktivitas', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
+                ref.invalidate(activityLogsProvider); // Invalidate to force refresh on next access
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ActivityLogListPage()),
@@ -176,58 +191,76 @@ class HomePage extends ConsumerWidget {
               mainAxisSpacing: 15,
               childAspectRatio: 1.5,
               children: [
-                _buildSummaryCard(
-                    'Total Jenis Barang', totalJenisBarang.toString(), Icons.category, Colors.blue.shade700),
-                _buildSummaryCard(
-                    'Stok Akan Habis', stokAkanHabis.toString(), Icons.warning_amber, Colors.orange.shade700),
-                _buildSummaryCard(
-                    'Transaksi Hari Ini', transaksiHariIni.toString(), Icons.swap_horiz, Colors.green.shade700),
+                totalJenisBarangAsync.when(
+                  data: (count) => _buildSummaryCard(
+                      'Total Jenis Barang', count.toString(), Icons.category, Colors.blue.shade700),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error: ${err.toString()}'),
+                ),
+                lowStockItemsAsync.when(
+                  data: (items) => _buildSummaryCard(
+                      'Stok Akan Habis', items.length.toString(), Icons.warning_amber, Colors.orange.shade700),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error: ${err.toString()}'),
+                ),
+                transactionsTodayAsync.when(
+                  data: (transactions) => _buildSummaryCard(
+                      'Transaksi Hari Ini', transactions.length.toString(), Icons.swap_horiz, Colors.green.shade700),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error: ${err.toString()}'),
+                ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Notifikasi Penting
+            // Notifikasi Penting (Stok Rendah)
             Text(
               'Notifikasi Penting',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              child: Container(
-                padding: const EdgeInsets.all(15.0),
-                decoration: BoxDecoration(
-                  color: lowStockItems.isNotEmpty
-                      ? Colors.red.shade50
-                      : Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(15),
-                  border: lowStockItems.isNotEmpty
-                      ? Border.all(color: Colors.red.shade200, width: 1)
-                      : null,
-                ),
-                child: lowStockItems.isNotEmpty
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${lowStockItems.length} barang memiliki stok rendah:',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+            lowStockItemsAsync.when(
+              data: (lowStockItems) {
+                return Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  child: Container(
+                    padding: const EdgeInsets.all(15.0),
+                    decoration: BoxDecoration(
+                      color: lowStockItems.isNotEmpty
+                          ? Colors.red.shade50
+                          : Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(15),
+                      border: lowStockItems.isNotEmpty
+                          ? Border.all(color: Colors.red.shade200, width: 1)
+                          : null,
+                    ),
+                    child: lowStockItems.isNotEmpty
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${lowStockItems.length} barang memiliki stok rendah:',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 5),
+                              ...lowStockItems
+                                  .map((item) => Text(
+                                        '${item.name} (${item.quantity} ${item.unit})',
+                                        style: Theme.of(context).textTheme.bodySmall,
+                                      ))
+                                  .toList(),
+                            ],
+                          )
+                        : Text(
+                            'Tidak ada notifikasi stok rendah.',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          const SizedBox(height: 5),
-                          ...lowStockItems
-                              .map((item) => Text(
-                                    '${item.nama} (${item.kuantitas} ${item.unit})',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ))
-                              .toList(),
-                        ],
-                      )
-                    : Text(
-                        'Tidak ada notifikasi stok rendah.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-              ),
+                  ),
+                );
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (err, stack) => Text('Error: ${err.toString()}'),
             ),
             const SizedBox(height: 20),
 
@@ -237,60 +270,75 @@ class HomePage extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
-            latestTransactions.isNotEmpty
-                ? ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: latestTransactions.length,
-                    itemBuilder: (context, index) {
-                      final Map<String, dynamic> trx = latestTransactions[index];
-                      final _PlaceholderItem? item = getBarangById(trx['barangId'] as String);
-                      final bool isMasuk = trx['tipe'] == 'masuk';
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
+            latestTransactionsAsync.when(
+              data: (latestTransactions) {
+                return latestTransactions.isNotEmpty
+                    ? ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: latestTransactions.length,
+                        itemBuilder: (context, index) {
+                          final transaction = latestTransactions[index];
+                          final isMasuk = transaction.type == TransactionType.IN;
+
+                          // Watch item details for the transaction
+                          final itemAsync = ref.watch(itemByIdProvider(transaction.itemId));
+
+                          return itemAsync.when(
+                            data: (item) {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6),
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item?.name ?? 'Barang Tidak Ditemukan',
+                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            '${DateFormat('dd/MM/yyyy HH:mm').format(transaction.date)} - ${transaction.note}',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '${isMasuk ? '+' : '-'}${transaction.quantity}',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          color: isMasuk ? Colors.green.shade700 : Colors.red.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (err, stack) => Text('Error: ${err.toString()}'),
+                          );
+                        },
+                      )
+                    : Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        child: Padding(
+                        child: Container(
                           padding: const EdgeInsets.all(15.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item?.nama ?? 'Barang Tidak Ditemukan',
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    '${trx['tanggal']} - ${trx['catatan']}',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                '${isMasuk ? '+' : '-'}${trx['jumlah']}',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: isMasuk ? Colors.green.shade700 : Colors.red.shade700,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            'Belum ada transaksi terbaru.',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       );
-                    },
-                  )
-                : Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    child: Container(
-                      padding: const EdgeInsets.all(15.0),
-                      child: Text(
-                        'Belum ada transaksi terbaru.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ),
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (err, stack) => Text('Error: ${err.toString()}'),
+            ),
           ],
         ),
       ),
@@ -318,6 +366,33 @@ class HomePage extends ConsumerWidget {
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       ),
     );
