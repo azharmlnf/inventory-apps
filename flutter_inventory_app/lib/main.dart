@@ -3,9 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/home/home_page.dart';
+import 'package:flutter_inventory_app/domain/services/notification_service.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-void main() {
-  runApp(const ProviderScope(child: MyApp()));
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  return NotificationService();
+});
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+  final container = ProviderContainer();
+  await container.read(notificationServiceProvider).init();
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -93,7 +106,6 @@ class _AuthCheckerState extends ConsumerState<AuthChecker> {
         return const LoginPage();
       case AuthStatus.initial:
       case AuthStatus.loading:
-      default:
         return const SplashScreen();
     }
   }

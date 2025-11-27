@@ -6,6 +6,20 @@ import 'package:flutter_inventory_app/data/repositories/transaction_repository.d
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final dateRangeProvider = StateProvider<({DateTime? start, DateTime? end})>((ref) {
+  return (start: null, end: null);
+});
+
+final filteredTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final transactionService = ref.watch(transactionServiceProvider);
+  final range = ref.watch(dateRangeProvider);
+  return transactionService.getTransactions(
+    startDate: range.start,
+    endDate: range.end,
+    // type: TransactionType.inType, // This was an example. The original code doesn't specify type filter here.
+  );
+});
+
 /// Provider untuk TransactionService.
 final transactionServiceProvider = Provider<TransactionService>((ref) {
   final transactionRepository = ref.watch(transactionRepositoryProvider);
@@ -28,7 +42,11 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
 
   Future<List<Transaction>> _fetchTransactions() async {
     final transactionService = ref.read(transactionServiceProvider);
-    return transactionService.getTransactions();
+    final range = ref.read(dateRangeProvider); // Get the current date range
+    return transactionService.getTransactions(
+      startDate: range.start,
+      endDate: range.end,
+    );
   }
 
   Future<void> refreshTransactions() async {

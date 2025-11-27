@@ -42,7 +42,7 @@ class TransactionListPage extends ConsumerWidget {
                 String itemName = 'Item Tidak Ditemukan';
                 itemsAsyncValue.whenData((items) {
                   try {
-                    if (transaction.itemId != null) {
+                    if (transaction.itemId.isNotEmpty) {
                       final foundItem = items.firstWhere((item) => item.id == transaction.itemId);
                       itemName = foundItem.name;
                     }
@@ -51,7 +51,7 @@ class TransactionListPage extends ConsumerWidget {
                   }
                 });
 
-                final isMasuk = transaction.type == TransactionType.IN;
+                final isMasuk = transaction.type == TransactionType.inType;
                 final transactionTypeLabel = isMasuk ? 'Masuk' : 'Keluar';
                 final transactionColor = isMasuk ? Colors.green.shade700 : Colors.red.shade700;
 

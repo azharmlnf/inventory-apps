@@ -80,8 +80,6 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
         updatedList[itemToUpdateIndex] = updatedItem;
         return updatedList; // Return the updated list directly
       } catch (e) {
-        // Log the error for debugging
-        print('Error updating item quantity in Appwrite: $e');
         throw Exception('Gagal memperbarui kuantitas item: ${e.toString()}');
       }
     });

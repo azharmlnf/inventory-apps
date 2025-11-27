@@ -228,7 +228,7 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
                         },
                         activeColor: Theme.of(context).colorScheme.primary,
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               );
@@ -274,7 +274,7 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
                               },
                               activeColor: Theme.of(context).colorScheme.primary,
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     );
@@ -296,33 +296,38 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
         void _confirmDeleteItem(BuildContext context, WidgetRef ref, Item item) {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (dialogContext) => AlertDialog( // Use dialogContext to avoid confusion
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text('Hapus Barang', style: Theme.of(context).textTheme.titleLarge),
               content: Text('Apakah Anda yakin ingin menghapus barang "${item.name}"?', style: Theme.of(context).textTheme.bodyMedium),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(dialogContext).pop(), // Use dialogContext here
                   child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    Navigator.of(context).pop(); // Close dialog first
+                    // dialogContext is still valid to pop the dialog
+                    Navigator.of(dialogContext).pop(); 
                     try {
                       await ref.read(itemProvider.notifier).deleteItem(item.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Barang "${item.name}" berhasil dihapus.'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      if (mounted) { // Check mounted before using widget.context
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Barang "${item.name}" berhasil dihapus.'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Gagal menghapus: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      if (mounted) { // Check mounted before using widget.context
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Gagal menghapus: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),

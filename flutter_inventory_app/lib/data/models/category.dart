@@ -24,7 +24,7 @@ class Category {
     );
   }
 
-  /// Mengonversi instance Category menjadi Map<String, dynamic> untuk dikirim ke Appwrite.
+  /// Mengonversi instance Category menjadi `Map<String, dynamic>` untuk dikirim ke Appwrite.
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,

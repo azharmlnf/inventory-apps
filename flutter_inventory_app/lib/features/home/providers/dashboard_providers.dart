@@ -56,6 +56,11 @@ final categoryNameProvider = Provider.family<AsyncValue<String>, String>((ref, c
   });
 });
 
+/// Provider untuk mendapatkan semua item.
+final allItemsProvider = Provider<AsyncValue<List<Item>>>((ref) {
+  return ref.watch(itemsProvider);
+});
+
 /// Provider untuk mendapatkan item berdasarkan ID.
 final itemByIdProvider = Provider.family<AsyncValue<Item?>, String>((ref, itemId) {
   return ref.watch(itemsProvider).whenData((items) {

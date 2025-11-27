@@ -1,3 +1,5 @@
+import 'package:flutter_inventory_app/presentation/widgets/stock_chart.dart';
+import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/activity_log_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart';
@@ -134,7 +136,10 @@ class HomePage extends ConsumerWidget {
               title: Text('Laporan', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                // Navigate to Laporan page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ReportPage()),
+                );
               },
             ),
             ListTile(
@@ -248,8 +253,7 @@ class HomePage extends ConsumerWidget {
                                   .map((item) => Text(
                                         '${item.name} (${item.quantity} ${item.unit})',
                                         style: Theme.of(context).textTheme.bodySmall,
-                                      ))
-                                  .toList(),
+                                      )),
                             ],
                           )
                         : Text(
@@ -263,6 +267,18 @@ class HomePage extends ConsumerWidget {
               error: (err, stack) => Text('Error: ${err.toString()}'),
             ),
             const SizedBox(height: 20),
+
+            // Stock Chart
+            Text(
+              'Grafik Stok Barang',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            ref.watch(allItemsProvider).when(
+                  data: (items) => StockChart(items: items),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Text('Error: ${err.toString()}'),
+                ),
 
             // Transaksi Terbaru
             Text(
@@ -279,7 +295,7 @@ class HomePage extends ConsumerWidget {
                         itemCount: latestTransactions.length,
                         itemBuilder: (context, index) {
                           final transaction = latestTransactions[index];
-                          final isMasuk = transaction.type == TransactionType.IN;
+                          final isMasuk = transaction.type == TransactionType.inType;
 
                           // Watch item details for the transaction
                           final itemAsync = ref.watch(itemByIdProvider(transaction.itemId));

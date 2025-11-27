@@ -1,6 +1,7 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
+import 'package:flutter_inventory_app/domain/services/notification_service.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
@@ -10,8 +11,10 @@ class ItemService {
   final ItemRepository _itemRepository;
   final Account _account;
   final ActivityLogService _activityLogService;
+  final NotificationService _notificationService;
 
-  ItemService(this._itemRepository, this._account, this._activityLogService);
+  ItemService(this._itemRepository, this._account, this._activityLogService,
+      this._notificationService);
 
   /// Mengambil ID pengguna yang sedang login.
   Future<String> _getCurrentUserId() async {
@@ -38,10 +41,25 @@ class ItemService {
     );
   }
 
+  Future<void> _checkAndNotifyLowStock(Item item) async {
+    if (item.quantity <= item.minQuantity) {
+      await _notificationService.showNotification(
+        'Stok Hampir Habis',
+        'Stok untuk item ${item.name} hampir habis. Sisa ${item.quantity} ${item.unit}.',
+      );
+    }
+  }
+
   /// Membuat item baru untuk pengguna yang sedang login.
   Future<Document> createItem(Item item) async {
-    // Pastikan userId pada item sesuai dengan pengguna yang sedang login
     final userId = await _getCurrentUserId();
+
+    // Periksa apakah item dengan nama yang sama sudah ada
+    if (await itemExists(name: item.name)) {
+      throw Exception('Item dengan nama "${item.name}" sudah ada.');
+    }
+
+    // Pastikan userId pada item sesuai dengan pengguna yang sedang login
     final newItem = Item(
       id: '', // ID akan dibuat oleh repository
       userId: userId,
@@ -58,6 +76,9 @@ class ItemService {
     );
     final doc = await _itemRepository.createItem(newItem);
 
+    final createdItem = item.copyWith(id: doc.$id);
+    await _checkAndNotifyLowStock(createdItem);
+
     // Record activity
     await _activityLogService.recordActivity(
       description: 'Membuat item baru: ${item.name}',
@@ -70,6 +91,7 @@ class ItemService {
   /// Memperbarui item yang sudah ada.
   Future<Document> updateItem(Item item) async {
     final doc = await _itemRepository.updateItem(item);
+    await _checkAndNotifyLowStock(item);
 
     // Record activity
     await _activityLogService.recordActivity(

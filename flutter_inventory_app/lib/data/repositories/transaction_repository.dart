@@ -51,7 +51,7 @@ class TransactionRepository {
         queries.add(Query.equal('itemId', itemId));
       }
       if (type != null) {
-        queries.add(Query.equal('type', type == TransactionType.IN ? 'IN' : 'OUT'));
+        queries.add(Query.equal('type', type == TransactionType.inType ? 'IN' : 'OUT'));
       }
       if (startDate != null) {
         queries.add(Query.greaterThanEqual('date', startDate.toIso8601String()));

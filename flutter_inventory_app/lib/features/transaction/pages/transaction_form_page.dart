@@ -31,7 +31,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     _quantityController = TextEditingController(text: transaction?.quantity.toString() ?? '1');
     _noteController = TextEditingController(text: transaction?.note ?? '');
     _selectedItemId = transaction?.itemId;
-    _selectedType = transaction?.type ?? TransactionType.IN;
+    _selectedType = transaction?.type ?? TransactionType.inType;
     _selectedTransactionDate = transaction?.date ?? DateTime.now();
   }
 
@@ -71,7 +71,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       setState(() => _isLoading = true);
 
       final isEditMode = widget.transaction != null;
-      print('Selected Item ID before creating Transaction: $_selectedItemId'); // Debug print
+
 
       final newTransaction = Transaction(
         id: widget.transaction?.id ?? '',
@@ -248,7 +248,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
         items: TransactionType.values.map((TransactionType type) {
           return DropdownMenuItem<TransactionType>(
             value: type,
-            child: Text(type == TransactionType.IN ? 'Barang Masuk' : 'Barang Keluar'),
+            child: Text(type == TransactionType.inType ? 'Barang Masuk' : 'Barang Keluar'),
           );
         }).toList(),
         onChanged: (TransactionType? newValue) {

@@ -1,8 +1,9 @@
-import 'package:flutter_inventory_app/domain/services/item_service.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
+import 'package:flutter_inventory_app/domain/services/item_service.dart'; // Restore this import
+import 'package:flutter_inventory_app/main.dart'; // For notificationServiceProvider
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider untuk ItemService.
@@ -10,7 +11,8 @@ final itemServiceProvider = Provider<ItemService>((ref) {
   final itemRepository = ref.watch(itemRepositoryProvider);
   final account = ref.watch(appwriteAccountProvider);
   final activityLogService = ref.watch(activityLogServiceProvider);
-  return ItemService(itemRepository, account, activityLogService);
+  final notificationService = ref.watch(notificationServiceProvider);
+  return ItemService(itemRepository, account, activityLogService, notificationService);
 });
 
 /// AsyncNotifierProvider untuk mengelola daftar item.

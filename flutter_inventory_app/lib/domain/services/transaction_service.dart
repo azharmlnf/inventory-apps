@@ -49,7 +49,7 @@ class TransactionService {
     // 2. Get the item to update its quantity
     final itemToUpdate = await _itemRepository.getItemById(transaction.itemId);
     int newQuantity;
-    if (transaction.type == TransactionType.IN) {
+    if (transaction.type == TransactionType.inType) {
       newQuantity = itemToUpdate.quantity + transaction.quantity;
     } else {
       newQuantity = itemToUpdate.quantity - transaction.quantity;
@@ -73,7 +73,7 @@ class TransactionService {
     await _itemRepository.updateItem(updatedItem);
 
     // 4. Record activity
-    final action = transaction.type == TransactionType.IN ? 'masuk' : 'keluar';
+    final action = transaction.type == TransactionType.inType ? 'masuk' : 'keluar';
     await _activityLogService.recordActivity(
       description:
           'Transaksi $action: ${transaction.quantity} ${itemToUpdate.unit} untuk item ${itemToUpdate.name}',

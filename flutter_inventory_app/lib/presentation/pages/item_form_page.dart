@@ -261,7 +261,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               value: category.id,
               child: Text(category.name),
             );
-          }).toList(),
+          }),
         ],
         onChanged: (String? newValue) {
           setState(() {

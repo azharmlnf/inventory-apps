@@ -1,8 +1,8 @@
 import 'package:appwrite/models.dart' as appwrite_models;
 
 enum TransactionType {
-  IN, // IN
-  OUT, // OUT
+  inType, // IN
+  outType, // OUT
 }
 
 /// Model untuk merepresentasikan data sebuah transaksi.
@@ -54,19 +54,19 @@ class Transaction {
       id: document.$id,
       userId: document.data['userId'],
       itemId: extractedItemId,
-      type: (document.data['type'] == 'IN') ? TransactionType.IN : TransactionType.OUT,
+      type: (document.data['type'] == 'IN') ? TransactionType.inType : TransactionType.outType,
       quantity: int.tryParse(document.data['quantity']?.toString() ?? '0') ?? 0,
       date: DateTime.parse(document.data['date']),
       note: document.data['note'],
     );
   }
 
-  /// Mengonversi instance Transaction menjadi Map<String, dynamic> untuk dikirim ke Appwrite.
+  /// Mengonversi instance Transaction menjadi `Map<String, dynamic>` untuk dikirim ke Appwrite.
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> json = {
       'userId': userId,
       'itemId': itemId, // itemId is now non-nullable
-      'type': type == TransactionType.IN ? 'IN' : 'OUT',
+      'type': type == TransactionType.inType ? 'IN' : 'OUT',
       'quantity': quantity,
       'date': date.toIso8601String(),
       'note': note,
