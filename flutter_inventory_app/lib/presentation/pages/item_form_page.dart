@@ -22,6 +22,7 @@ class ItemFormPage extends ConsumerStatefulWidget {
 class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _barcodeController;
   late TextEditingController _brandController;
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
@@ -42,6 +43,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     super.initState();
     final item = widget.item;
     _nameController = TextEditingController(text: item?.name ?? '');
+    _barcodeController = TextEditingController(text: item?.barcode ?? '');
     _brandController = TextEditingController(text: item?.brand ?? '');
     _descriptionController = TextEditingController(text: item?.description ?? '');
     _quantityController = TextEditingController(text: item?.quantity.toString() ?? '0');
@@ -60,6 +62,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _barcodeController.dispose();
     _brandController.dispose();
     _descriptionController.dispose();
     _quantityController.dispose();
@@ -153,6 +156,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         id: widget.item?.id ?? '',
         userId: widget.item?.userId ?? '',
         name: itemName,
+        barcode: _barcodeController.text.isNotEmpty ? _barcodeController.text.trim() : null,
         brand: _brandController.text.isNotEmpty ? _brandController.text.trim() : null,
         description: _descriptionController.text.trim(),
         quantity: int.tryParse(_quantityController.text) ?? 0,
@@ -216,6 +220,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     _buildImagePicker(), // Image picker UI
                     const SizedBox(height: 16),
                     _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
+                    _buildTextField(_barcodeController, 'Barcode (Opsional)', null),
                     _buildTextField(_brandController, 'Merek (Opsional)', null),
                     _buildTextField(_descriptionController, 'Deskripsi (Opsional)', null, maxLines: 3),
                     _buildTextField(_unitController, 'Unit (e.g., Pcs, Box)', 'Unit tidak boleh kosong'),
@@ -254,7 +259,10 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
             ),
     );
   }
-
+  
+  // ... existing helper methods (_buildImagePicker, _buildTextField, etc) unchanged
+  // ... except for the errorBuilder in _buildImagePicker
+  
   Widget _buildImagePicker() {
     return Center(
       child: Stack(

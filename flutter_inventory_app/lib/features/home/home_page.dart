@@ -45,14 +45,6 @@ class HomePage extends ConsumerWidget {
       }
     });
 
-    // Initial data refresh when the widget is first built or dependencies change
-    // This ensures data is fresh when navigating back to the dashboard
-    ref.watch(itemsProvider.notifier).refreshItems();
-    ref.watch(categoriesProvider.notifier).refreshCategories();
-    ref.watch(transactionsProvider.notifier).refreshTransactions();
-    ref.watch(activityLogsProvider.notifier).refreshActivityLogs();
-
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),

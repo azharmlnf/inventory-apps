@@ -6,6 +6,7 @@ class Item {
   final String id;          // ID unik dokumen dari Appwrite ($id)
   final String userId;      // ID pengguna yang memiliki barang ini
   final String name;        // Nama barang
+  final String? barcode;     // Barcode produk (opsional)
   final String? brand;      // Merek barang (opsional)
   final String? description; // Deskripsi barang (opsional)
   final int quantity;       // Kuantitas stok saat ini
@@ -20,6 +21,7 @@ class Item {
     required this.id,
     required this.userId,
     required this.name,
+    this.barcode,
     this.brand,
     this.description,
     required this.quantity,
@@ -37,6 +39,7 @@ class Item {
       id: document.$id,
       userId: document.data['userId'],
       name: document.data['name'] ?? '',
+      barcode: document.data['barcode'],
       brand: document.data['brand'],
       description: document.data['description'],
       quantity: int.tryParse(document.data['quantity']?.toString() ?? '0') ?? 0,
@@ -54,6 +57,7 @@ class Item {
     final Map<String, dynamic> json = {
       'userId': userId,
       'name': name,
+      'barcode': barcode,
       'brand': brand,
       'description': description,
       'quantity': quantity,
@@ -76,6 +80,7 @@ class Item {
     String? id,
     String? userId,
     String? name,
+    String? barcode,
     String? brand,
     String? description,
     int? quantity,
@@ -90,6 +95,7 @@ class Item {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       name: name ?? this.name,
+      barcode: barcode ?? this.barcode,
       brand: brand ?? this.brand,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,

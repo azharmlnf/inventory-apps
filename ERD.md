@@ -19,6 +19,7 @@ erDiagram
         string userId FK "Owner"
         string categoryId "Optional FK"
         string name
+        string barcode "Optional"
         string brand "Optional"
         string description
         int quantity

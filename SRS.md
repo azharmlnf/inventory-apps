@@ -113,7 +113,7 @@ Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplika
 #### 3.4.1 Struktur Koleksi (Collections)
 - **Koleksi `items`**:
   - `userId` (string, Wajib, terindeks)
-  - `name`, `description`, `quantity`, `unit`, `purchase_price`, `sale_price`, `min_quantity`, `imageId`
+  - `name`, `barcode`, `description`, `quantity`, `unit`, `purchase_price`, `sale_price`, `min_quantity`, `imageId`
 - **Koleksi `categories`**:
   - `userId` (string, Wajib, terindeks)
   - `name`

@@ -59,6 +59,8 @@ class ItemDetailPage extends ConsumerWidget {
             'Informasi Umum',
             [
               _buildDetailRow(context, 'Nama', item.name),
+              if (item.barcode != null && item.barcode!.isNotEmpty)
+                _buildDetailRow(context, 'Barcode', item.barcode!),
               if (item.brand != null && item.brand!.isNotEmpty)
                 _buildDetailRow(context, 'Merek', item.brand!),
               if (item.description != null && item.description!.isNotEmpty)
