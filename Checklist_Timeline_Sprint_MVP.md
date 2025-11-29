@@ -39,20 +39,20 @@
 #### Minggu 4: Fitur Notifikasi & Pelaporan Dasar
 *   **Pengingat Restock:**
     *   [x] Implementasikan logika di sisi klien untuk mendeteksi stok rendah dari data yang diambil dari Appwrite.
-    *   [ ] Integrasi `flutter_local_notifications` untuk menampilkan notifikasi stok rendah.
+    *   [x] Integrasi `flutter_local_notifications` untuk menampilkan notifikasi stok rendah.
     *   [ ] (Opsional) Jelajahi Appwrite Functions untuk push notification di masa depan.
 *   **Pelaporan Sederhana:**
-    *   [ ] Buat `ReportPage` untuk menampilkan ringkasan stok.
-    *   [ ] Implementasikan query ke Appwrite untuk memfilter riwayat transaksi.
+    *   [x] Buat `ReportPage` untuk menampilkan ringkasan stok.
+    *   [x] Implementasikan query ke Appwrite untuk memfilter riwayat transaksi.
 
 #### Minggu 5: Fitur Grafik Stok & Ekspor Data
 *   **Grafik Stok Barang:**
-    *   [ ] Integrasi `fl_chart` library.
-    *   [ ] Implementasikan logika untuk mengambil dan mengagregasi data stok per kategori dari Appwrite.
-    *   [ ] Buat widget grafik untuk menampilkan visualisasi stok.
+    *   [x] Integrasi `fl_chart` library.
+    *   [x] Implementasikan logika untuk mengambil dan mengagregasi data stok per kategori dari Appwrite.
+    *   [x] Buat widget grafik untuk menampilkan visualisasi stok.
 *   **Ekspor Data:**
-    *   [ ] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
-    *   [ ] Integrasi `share_plus` untuk membagikan file ekspor.
+    *   [x] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
+    *   [x] Integrasi `share_plus` untuk membagikan file ekspor.
 
 #### Minggu 6: Implementasi Monetisasi
 *   **Monetisasi Iklan:**

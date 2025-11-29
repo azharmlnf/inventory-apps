@@ -36,10 +36,10 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   }
 
   /// Menambahkan item baru.
-  Future<void> addItem(Item item) async {
+  Future<void> addItem(Item item, {String? imagePath}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await ref.read(itemServiceProvider).createItem(item);
+      await ref.read(itemServiceProvider).createItem(item, imagePath: imagePath);
       // Invalidate provider agar data di-refresh dan menampilkan item baru.
       ref.invalidateSelf();
       // Tunggu data baru selesai di-load sebelum mengembalikan list.
@@ -48,10 +48,10 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   }
 
   /// Memperbarui item yang ada.
-  Future<void> updateItem(Item item) async {
+  Future<void> updateItem(Item item, {String? imagePath}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await ref.read(itemServiceProvider).updateItem(item);
+      await ref.read(itemServiceProvider).updateItem(item, imagePath: imagePath);
       ref.invalidateSelf();
       return future;
     });
@@ -96,7 +96,11 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
         orElse: () => throw Exception('Item tidak ditemukan untuk dihapus.'),
       );
 
-      await ref.read(itemServiceProvider).deleteItem(itemId, itemToDelete.name);
+      await ref.read(itemServiceProvider).deleteItem(
+            itemId,
+            itemToDelete.name,
+            imageId: itemToDelete.imageId,
+          );
       ref.invalidateSelf();
       return future;
     });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
 
 class ItemDetailPage extends ConsumerWidget {
@@ -24,6 +25,10 @@ class ItemDetailPage extends ConsumerWidget {
           error: (e, s) => 'Error',
         );
 
+    final imageUrl = item.imageId != null
+        ? ref.read(itemServiceProvider).getImageUrl(item.imageId!)
+        : null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(item.name),
@@ -44,6 +49,11 @@ class ItemDetailPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          if (imageUrl != null)
+            _buildItemImage(context, imageUrl)
+          else
+            _buildImagePlaceholder(context),
+          const SizedBox(height: 16),
           _buildDetailCard(
             context,
             'Informasi Umum',
@@ -90,6 +100,67 @@ class ItemDetailPage extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildItemImage(BuildContext context, String imageUrl) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        imageUrl,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          return progress == null ? child : const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // Pass the actual error to the placeholder for debugging
+          return _buildImagePlaceholder(context, hasError: true, error: error);
+        },
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder(BuildContext context, {bool hasError = false, Object? error}) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              hasError ? Icons.error_outline : Icons.image_not_supported_outlined,
+              size: 60,
+              color: hasError ? Colors.red : Colors.grey[400],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hasError ? 'Gagal Memuat Gambar' : 'Tidak Ada Gambar',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ),
+            // Display the actual error if available
+            if (hasError && error != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

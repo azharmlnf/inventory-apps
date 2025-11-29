@@ -9,14 +9,16 @@ import 'package:flutter_inventory_app/features/item/providers/item_filter_provid
 /// Provider untuk ItemRepository.
 final itemRepositoryProvider = Provider<ItemRepository>((ref) {
   final databases = ref.watch(appwriteDatabaseProvider);
-  return ItemRepository(databases);
+  final storage = ref.watch(appwriteStorageProvider);
+  return ItemRepository(databases, storage);
 });
 
 /// Repository untuk mengelola operasi data terkait 'items' di Appwrite.
 class ItemRepository {
   final Databases _databases;
+  final Storage _storage;
 
-  ItemRepository(this._databases);
+  ItemRepository(this._databases, this._storage);
 
   /// Membuat item baru di database.
   Future<models.Document> createItem(Item item) async {
@@ -98,8 +100,12 @@ class ItemRepository {
   }
 
   /// Menghapus item.
-  Future<void> deleteItem(String itemId) async {
+  Future<void> deleteItem(String itemId, {String? imageId}) async {
     try {
+      // Hapus gambar dari storage terlebih dahulu jika ada
+      if (imageId != null && imageId.isNotEmpty) {
+        await deleteItemImage(imageId);
+      }
       await _databases.deleteDocument(
         databaseId: AppConstants.databaseId,
         collectionId: AppConstants.itemsCollectionId,
@@ -107,6 +113,48 @@ class ItemRepository {
       );
     } on AppwriteException catch (e) {
       throw e.message ?? 'Gagal menghapus item.';
+    }
+  }
+
+  // - - - - - Image Storage Methods - - - - -
+
+  /// Upload gambar item ke Appwrite Storage.
+  Future<models.File> uploadItemImage(String filePath) async {
+    try {
+      final file = await _storage.createFile(
+        bucketId: AppConstants.itemImagesBucketId,
+        fileId: ID.unique(),
+        file: InputFile.fromPath(path: filePath),
+        permissions: [Permission.read(Role.any())], // Public read access
+      );
+      return file;
+    } on AppwriteException catch (e) {
+      throw e.message ?? 'Gagal mengupload gambar.';
+    }
+  }
+
+  /// Mendapatkan URL publik untuk preview gambar.
+  String getItemImageUrl(String fileId) {
+    // URL-Structure: {endpoint}/storage/buckets/{bucketId}/files/{fileId}/preview?project={projectId}
+    const String endpoint = 'https://sgp.cloud.appwrite.io/v1';
+    const String projectId = '691431ef001f61d2ee98';
+    const String bucketId = AppConstants.itemImagesBucketId;
+    
+    return '$endpoint/storage/buckets/$bucketId/files/$fileId/preview?project=$projectId';
+  }
+
+  /// Menghapus gambar dari Appwrite Storage.
+  Future<void> deleteItemImage(String fileId) async {
+    try {
+      await _storage.deleteFile(
+        bucketId: AppConstants.itemImagesBucketId,
+        fileId: fileId,
+      );
+    } on AppwriteException catch (e) {
+      // Jangan lemparkan error jika file tidak ada, karena mungkin sudah terhapus
+      if (e.code != 404) {
+        throw e.message ?? 'Gagal menghapus gambar lama.';
+      }
     }
   }
 

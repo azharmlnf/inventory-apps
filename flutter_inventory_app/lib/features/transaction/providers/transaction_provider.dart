@@ -18,7 +18,7 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
 });
 
 final itemRepositoryProvider = Provider<ItemRepository>((ref) {
-  return ItemRepository(ref.read(appwriteDatabaseProvider));
+  return ItemRepository(ref.read(appwriteDatabaseProvider), ref.read(appwriteStorageProvider));
 });
 
 final activityLogRepositoryProvider = Provider<ActivityLogRepository>((ref) {

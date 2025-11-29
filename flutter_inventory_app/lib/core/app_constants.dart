@@ -1,5 +1,6 @@
 class AppConstants {
   static const String databaseId = '69146b5e0021cd39e3ec';
+  static const String itemImagesBucketId = '692a5b44001addc52785'; // Bucket for item images
   static const String categoriesCollectionId = '6914973c0019333d757e';
   static const String itemsCollectionId = '6914a1ea003695fc392d';
   static const String transactionsCollectionId = '6914a2a2001307fc2016';

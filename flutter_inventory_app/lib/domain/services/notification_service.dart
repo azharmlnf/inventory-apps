@@ -5,8 +5,9 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    // Memberi tahu plugin secara eksplisit untuk mencari ikon di folder @mipmap
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
@@ -16,7 +17,8 @@ class NotificationService {
 
   Future<void> showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('your channel id', 'your channel name',
+        AndroidNotificationDetails('low_stock_channel', 'Low Stock Notifications',
+            channelDescription: 'Notifications for items with low stock',
             importance: Importance.max,
             priority: Priority.high,
             showWhen: false);

@@ -194,7 +194,7 @@ class HomePage extends ConsumerWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 15,
               mainAxisSpacing: 15,
-              childAspectRatio: 1.5,
+              childAspectRatio: 1.2,
               children: [
                 totalJenisBarangAsync.when(
                   data: (count) => _buildSummaryCard(
@@ -270,17 +270,20 @@ class HomePage extends ConsumerWidget {
 
             // Stock Chart
             Text(
-              'Grafik Stok Barang',
+              'Grafik Stok Berdasarkan Kategori',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
-            ref.watch(allItemsProvider).when(
-                  data: (items) => StockChart(items: items),
+            ref.watch(stockByCategoryProvider).when(
+                  data: (categoryStocks) => categoryStocks.isEmpty
+                      ? const Center(child: Text('Tidak ada data stok untuk ditampilkan.'))
+                      : StockChart(categoryStocks: categoryStocks),
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => Text('Error: ${err.toString()}'),
                 ),
 
             // Transaksi Terbaru
+            const SizedBox(height: 20),
             Text(
               'Transaksi Terbaru',
               style: Theme.of(context).textTheme.titleMedium,

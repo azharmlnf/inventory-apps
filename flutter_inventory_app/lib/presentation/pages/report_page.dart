@@ -17,21 +17,31 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   Widget build(BuildContext context) {
     final dateRange = ref.watch(dateRangeProvider);
     final filteredTransactions = ref.watch(filteredTransactionsProvider);
-    final allItems = ref.watch(allItemsProvider);
+    
+    // Watch dashboard providers for the summary
+    final totalItemsAsync = ref.watch(totalItemsCountProvider);
+    final lowStockItemsAsync = ref.watch(lowStockItemsProvider);
+    final totalValueAsync = ref.watch(totalStockValueProvider);
+
+    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laporan Transaksi'),
+        title: const Text('Laporan'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
+              ref.invalidate(totalItemsCountProvider);
+              ref.invalidate(lowStockItemsProvider);
+              ref.invalidate(totalStockValueProvider);
               ref.read(dateRangeProvider.notifier).state = (start: null, end: null);
             },
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
               final exportService = ref.read(exportServiceProvider);
+              final allItems = ref.read(allItemsProvider);
               if (value == 'export_items') {
                 allItems.whenData((items) {
                   exportService.exportItemsToCsv(items);
@@ -56,78 +66,162 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Summary Section
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            padding: const EdgeInsets.all(16.0),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 3,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.9,
               children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: dateRange.start ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null) {
-                      ref.read(dateRangeProvider.notifier).state = (
-                        start: pickedDate,
-                        end: dateRange.end,
-                      );
-                    }
-                  },
-                  child: Text(dateRange.start == null
-                      ? 'Pilih Tanggal Mulai'
-                      : 'Mulai: ${DateFormat('dd/MM/yyyy').format(dateRange.start!)}'),
+                totalItemsAsync.when(
+                  data: (count) => _buildSummaryCard('Total Item', count.toString(), Icons.inventory_2_outlined, Colors.blue),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error'),
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: dateRange.end ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null) {
-                      ref.read(dateRangeProvider.notifier).state = (
-                        start: dateRange.start,
-                        end: pickedDate,
-                      );
-                    }
-                  },
-                  child: Text(dateRange.end == null
-                      ? 'Pilih Tanggal Akhir'
-                      : 'Akhir: ${DateFormat('dd/MM/yyyy').format(dateRange.end!)}'),
+                lowStockItemsAsync.when(
+                  data: (items) => _buildSummaryCard('Stok Rendah', items.length.toString(), Icons.warning_amber_rounded, Colors.orange),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error'),
+                ),
+                totalValueAsync.when(
+                  data: (value) => _buildSummaryCard('Total Nilai Stok', currencyFormatter.format(value), Icons.monetization_on_outlined, Colors.green),
+                  loading: () => _buildLoadingCard(),
+                  error: (err, stack) => _buildErrorCard('Error'),
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
+          // Transaction Filter Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text("Filter Transaksi", style: Theme.of(context).textTheme.titleMedium),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    onPressed: () => _selectDate(isStartDate: true),
+                    label: Text(dateRange.start == null ? 'Mulai' : DateFormat('dd/MM/yy').format(dateRange.start!)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    onPressed: () => _selectDate(isStartDate: false),
+                    label: Text(dateRange.end == null ? 'Akhir' : DateFormat('dd/MM/yy').format(dateRange.end!)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Transaction List
           Expanded(
-            child: filteredTransactions.when(
-              data: (transactions) {
-                if (transactions.isEmpty) {
-                  return const Center(child: Text('Tidak ada transaksi pada rentang tanggal ini.'));
-                }
-                return ListView.builder(
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    final transaction = transactions[index];
-                    return ListTile(
-                      title: Text('Item ID: ${transaction.itemId}'),
-                      subtitle: Text(
-                          'Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}'),
-                      trailing: Text(
-                          DateFormat('dd/MM/yyyy').format(transaction.date)),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: filteredTransactions.when(
+                data: (transactions) {
+                  if (transactions.isEmpty) {
+                    return const Center(child: Text('Tidak ada transaksi pada rentang tanggal ini.'));
+                  }
+                  return ListView.builder(
+                    itemCount: transactions.length,
+                    itemBuilder: (context, index) {
+                      final transaction = transactions[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: ListTile(
+                          title: Text('Item ID: ${transaction.itemId}'), // Consider resolving to item name
+                          subtitle: Text('Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}'),
+                          trailing: Text(DateFormat('dd/MM/yyyy').format(transaction.date)),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('Error: $err')),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _selectDate({required bool isStartDate}) async {
+    final dateRange = ref.read(dateRangeProvider);
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: (isStartDate ? dateRange.start : dateRange.end) ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null) {
+      if (isStartDate) {
+        ref.read(dateRangeProvider.notifier).state = (start: pickedDate, end: dateRange.end);
+      } else {
+        ref.read(dateRangeProvider.notifier).state = (start: dateRange.start, end: pickedDate);
+      }
+    }
+  }
+
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+        ),
       ),
     );
   }

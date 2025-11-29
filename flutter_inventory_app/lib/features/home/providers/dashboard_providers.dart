@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
@@ -20,6 +21,16 @@ final totalCategoriesCountProvider = Provider<AsyncValue<int>>((ref) {
 final lowStockItemsProvider = Provider<AsyncValue<List<Item>>>((ref) {
   return ref.watch(itemsProvider).whenData((items) {
     return items.where((item) => item.quantity <= item.minQuantity).toList();
+  });
+});
+
+/// Provider untuk menghitung total nilai stok inventaris.
+final totalStockValueProvider = Provider<AsyncValue<double>>((ref) {
+  return ref.watch(itemsProvider).whenData((items) {
+    return items.fold<double>(0.0, (sum, item) {
+      final price = item.purchasePrice ?? 0.0;
+      return sum + (item.quantity * price);
+    });
   });
 });
 
@@ -70,4 +81,83 @@ final itemByIdProvider = Provider.family<AsyncValue<Item?>, String>((ref, itemId
       return null; // Return null if item is not found
     }
   });
+});
+
+/// Data class untuk menampung data agregasi stok per kategori.
+class CategoryStock {
+  final String categoryName;
+  final double totalQuantity;
+  final Color color;
+
+  CategoryStock({
+    required this.categoryName,
+    required this.totalQuantity,
+    required this.color,
+  });
+}
+
+/// Provider untuk mengagregasi data stok per kategori.
+final stockByCategoryProvider = Provider<AsyncValue<List<CategoryStock>>>((ref) {
+  final itemsAsync = ref.watch(allItemsProvider);
+  final categoriesAsync = ref.watch(categoriesProvider);
+
+  if (itemsAsync.isLoading || categoriesAsync.isLoading) {
+    return const AsyncValue.loading();
+  }
+
+  if (itemsAsync.hasError) {
+    return AsyncValue.error(itemsAsync.error!, itemsAsync.stackTrace!);
+  }
+  if (categoriesAsync.hasError) {
+    return AsyncValue.error(categoriesAsync.error!, categoriesAsync.stackTrace!);
+  }
+
+  final items = itemsAsync.value!;
+  final categories = categoriesAsync.value!;
+
+  final Map<String, double> categoryQuantities = {};
+
+  // Inisialisasi map dengan semua kategori yang ada
+  for (var category in categories) {
+    categoryQuantities[category.id] = 0;
+  }
+
+  // Agregasi kuantitas dari setiap item
+  for (var item in items) {
+    final categoryId = item.categoryId;
+    if (categoryId != null && categoryQuantities.containsKey(categoryId)) {
+      categoryQuantities[categoryId] = (categoryQuantities[categoryId]!) + item.quantity;
+    } else {
+      // Handle item tanpa kategori
+      categoryQuantities['uncategorized'] = (categoryQuantities['uncategorized'] ?? 0) + item.quantity;
+    }
+  }
+
+  final List<CategoryStock> result = [];
+  final List<Color> colors = Colors.primaries;
+  int colorIndex = 0;
+
+  categoryQuantities.forEach((categoryId, totalQuantity) {
+    if (totalQuantity > 0) {
+      String categoryName;
+      if (categoryId == 'uncategorized') {
+        categoryName = 'Lainnya';
+      } else {
+        try {
+          categoryName = categories.firstWhere((cat) => cat.id == categoryId).name;
+        } catch (e) {
+          categoryName = 'Kategori Tidak Dikenal';
+        }
+      }
+      
+      result.add(CategoryStock(
+        categoryName: categoryName,
+        totalQuantity: totalQuantity,
+        color: colors[colorIndex % colors.length],
+      ));
+      colorIndex++;
+    }
+  });
+
+  return AsyncValue.data(result);
 });

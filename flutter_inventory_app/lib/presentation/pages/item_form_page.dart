@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
@@ -7,7 +8,7 @@ import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
-
+import 'package:image_picker/image_picker.dart';
 
 class ItemFormPage extends ConsumerStatefulWidget {
   final Item? item;
@@ -31,6 +32,11 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   String? _selectedCategoryId;
   bool _isLoading = false;
 
+  // State for image handling
+  File? _imageFile;
+  String? _networkImageUrl;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +50,11 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _purchasePriceController = TextEditingController(text: item?.purchasePrice?.toStringAsFixed(0) ?? '');
     _salePriceController = TextEditingController(text: item?.salePrice?.toStringAsFixed(0) ?? '');
     _selectedCategoryId = item?.categoryId;
+
+    if (item?.imageId != null) {
+      // Get the image URL from the service
+      _networkImageUrl = ref.read(itemServiceProvider).getImageUrl(item!.imageId!);
+    }
   }
 
   @override
@@ -59,6 +70,48 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(
+      source: source,
+      imageQuality: 80, // Compress image
+      maxWidth: 800, // Resize image
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+        _networkImageUrl = null; // Clear network image if a new one is picked
+      });
+    }
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeri'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -66,8 +119,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
       final isEditMode = widget.item != null;
       final itemName = _nameController.text.trim();
 
-      // Cek duplikasi hanya jika ini adalah item baru
-      if (!isEditMode) {
+      // Cek duplikasi hanya jika ini adalah item baru atau nama item diubah
+      if (!isEditMode || (isEditMode && itemName != widget.item!.name)) {
         final exists = await ref.read(itemServiceProvider).itemExists(name: itemName);
         if (mounted && exists) {
           final continueSave = await showDialog<bool>(
@@ -88,7 +141,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               ],
             ),
           );
-          // Jika user menekan batal, hentikan proses
           if (continueSave == null || !continueSave) {
             setState(() => _isLoading = false);
             return;
@@ -96,9 +148,10 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         }
       }
 
-      final newItem = Item(
+      // Populate item data from form fields
+      final itemData = Item(
         id: widget.item?.id ?? '',
-        userId: widget.item?.userId ?? '', // userId will be set by the service
+        userId: widget.item?.userId ?? '',
         name: itemName,
         brand: _brandController.text.isNotEmpty ? _brandController.text.trim() : null,
         description: _descriptionController.text.trim(),
@@ -108,13 +161,14 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         purchasePrice: double.tryParse(_purchasePriceController.text),
         salePrice: double.tryParse(_salePriceController.text),
         categoryId: _selectedCategoryId,
+        imageId: widget.item?.imageId,
       );
 
       try {
         if (isEditMode) {
-          await ref.read(itemProvider.notifier).updateItem(newItem);
+          await ref.read(itemProvider.notifier).updateItem(itemData, imagePath: _imageFile?.path);
         } else {
-          await ref.read(itemProvider.notifier).addItem(newItem);
+          await ref.read(itemProvider.notifier).addItem(itemData, imagePath: _imageFile?.path);
         }
 
         if (mounted) {
@@ -124,7 +178,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               backgroundColor: Colors.green,
             ),
           );
-          ref.invalidate(itemsProvider); // Invalidate itemsProvider to refresh the list
+          ref.invalidate(itemProvider);
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -159,6 +213,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _buildImagePicker(), // Image picker UI
+                    const SizedBox(height: 16),
                     _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
                     _buildTextField(_brandController, 'Merek (Opsional)', null),
                     _buildTextField(_descriptionController, 'Deskripsi (Opsional)', null, maxLines: 3),
@@ -179,7 +235,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     ),
                     categoriesAsync.when(
                       data: (categories) {
-                        // Ensure _selectedCategoryId is valid
                         if (_selectedCategoryId != null && !categories.any((c) => c.id == _selectedCategoryId)) {
                           _selectedCategoryId = null;
                         }
@@ -197,6 +252,70 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return Center(
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          GestureDetector(
+            onTap: _showImageSourceActionSheet,
+            child: Container(
+              height: 150,
+              width: 150,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.grey.shade400, width: 2),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(13),
+                child: _imageFile != null
+                    ? Image.file(_imageFile!, fit: BoxFit.cover)
+                    : _networkImageUrl != null
+                        ? Image.network(_networkImageUrl!, fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              return progress == null ? child : const Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              // For debugging, show the actual error.
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Gagal memuat gambar:\n${error.toString()}',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red),
+                                ),
+                              );
+                            },
+                          )
+                        : const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt, size: 50, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text('Tambah Gambar', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+              ),
+            ),
+          ),
+          Material(
+            color: Theme.of(context).colorScheme.secondary,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              onTap: _showImageSourceActionSheet,
+              borderRadius: BorderRadius.circular(20),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.edit, color: Colors.white, size: 20),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 
