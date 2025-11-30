@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
+import 'package:flutter_inventory_app/domain/services/ad_service.dart';
+import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
@@ -9,6 +12,7 @@ import 'package:flutter_inventory_app/presentation/pages/item_detail_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
 
 
@@ -22,6 +26,9 @@ class ItemListPage extends ConsumerStatefulWidget {
 class _ItemListPageState extends ConsumerState<ItemListPage> {
   final _searchController = TextEditingController();
   Timer? _debounce;
+  
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
 
   @override
   void initState() {
@@ -30,9 +37,40 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    if (kIsWeb) {
+      return;
+    }
+
+    final isPremium = ref.read(authControllerProvider).isPremium;
+    if (isPremium) {
+      return;
+    }
+
+    _bannerAd = ref.read(adServiceProvider).createBannerAd(
+      onAdLoaded: () {
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        }
+      },
+      onAdFailedToLoad: (error) {
+        _bannerAd?.dispose();
+      },
+    );
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -86,38 +124,54 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
           ),
         ],
       ),
-      body: itemsAsyncValue.when(
-        data: (items) {
-          if (items.isEmpty) {
-            return const Center(
-              child: Text(
-                'Barang tidak ditemukan atau belum ada.',
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(itemProvider);
-            },
-            child: GridView.builder(
-              padding: const EdgeInsets.all(12.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12.0,
-                mainAxisSpacing: 12.0,
-                childAspectRatio: 0.75, // Adjust this ratio to fit content
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _ItemCard(item: item);
+      body: Column(
+        children: [
+          Expanded(
+            child: itemsAsyncValue.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Barang tidak ditemukan atau belum ada.',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(itemProvider);
+                  },
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(12.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12.0,
+                      mainAxisSpacing: 12.0,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return _ItemCard(
+                        item: item,
+                        onDelete: (itemToDelete) => _confirmDeleteItem(context, ref, itemToDelete),
+                      );
+                    },
+                  ),
+                );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+          ),
+          if (_bannerAd != null && _isAdLoaded)
+            Container(
+              alignment: Alignment.center,
+              width: _bannerAd!.size.width.toDouble(),
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -132,37 +186,80 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
     );
   }
       
-  // ... (Dialog methods _showSortDialog, _showFilterDialog, _confirmDeleteItem are unchanged)
-  // ... They will be called from the _ItemCard now.
-
   void _showSortDialog(BuildContext context, WidgetRef ref) {
-          final currentSort = ref.read(itemSortProvider);
-          showModalBottomSheet(
-            context: context,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final currentSort = ref.read(itemSortProvider);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Urutkan Berdasarkan',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Divider(),
+              ...ItemSortType.values.map((sortType) {
+                return RadioListTile<ItemSortType>(
+                  title: Text(sortType.label, style: Theme.of(context).textTheme.bodyLarge),
+                  value: sortType,
+                  groupValue: currentSort,
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(itemSortProvider.notifier).state = value;
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  activeColor: Theme.of(context).colorScheme.primary,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+      
+  void _showFilterDialog(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoryProvider);
+    final currentFilter = ref.read(itemCategoryFilterProvider);
+  
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Filter Berdasarkan Kategori', style: Theme.of(context).textTheme.titleLarge),
+          content: categoriesAsync.when(
+            data: (categories) {
+              return SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
                   children: [
-                    Text(
-                      'Urutkan Berdasarkan',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    RadioListTile<String?>(
+                      title: Text('Semua Kategori', style: Theme.of(context).textTheme.bodyLarge),
+                      value: null,
+                      groupValue: currentFilter,
+                      onChanged: (value) {
+                        ref.read(itemCategoryFilterProvider.notifier).state = value;
+                        Navigator.of(context).pop();
+                      },
+                      activeColor: Theme.of(context).colorScheme.primary,
                     ),
-                    const Divider(),
-                    ...ItemSortType.values.map((sortType) {
-                      return RadioListTile<ItemSortType>(
-                        title: Text(sortType.label, style: Theme.of(context).textTheme.bodyLarge),
-                        value: sortType,
-                        groupValue: currentSort,
+                    ...categories.map((cat) {
+                      return RadioListTile<String?>(
+                        title: Text(cat.name, style: Theme.of(context).textTheme.bodyLarge),
+                        value: cat.id,
+                        groupValue: currentFilter,
                         onChanged: (value) {
-                          if (value != null) {
-                            ref.read(itemSortProvider.notifier).state = value;
-                          }
+                          ref.read(itemCategoryFilterProvider.notifier).state = value;
                           Navigator.of(context).pop();
                         },
                         activeColor: Theme.of(context).colorScheme.primary,
@@ -172,116 +269,71 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
                 ),
               );
             },
-          );
-        }
-      
-  void _showFilterDialog(BuildContext context, WidgetRef ref) {
-      final categoriesAsync = ref.watch(categoryProvider);
-      final currentFilter = ref.read(itemCategoryFilterProvider);
-  
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Filter Berdasarkan Kategori', style: Theme.of(context).textTheme.titleLarge),
-            content: categoriesAsync.when(
-              data: (categories) {
-                return SizedBox(
-                  width: double.maxFinite,
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      RadioListTile<String?>(
-                        title: Text('Semua Kategori', style: Theme.of(context).textTheme.bodyLarge),
-                        value: null,
-                        groupValue: currentFilter,
-                        onChanged: (value) {
-                          ref.read(itemCategoryFilterProvider.notifier).state = value;
-                          Navigator.of(context).pop();
-                        },
-                        activeColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      ...categories.map((cat) {
-                        return RadioListTile<String?>(
-                          title: Text(cat.name, style: Theme.of(context).textTheme.bodyLarge),
-                          value: cat.id,
-                          groupValue: currentFilter,
-                          onChanged: (value) {
-                            ref.read(itemCategoryFilterProvider.notifier).state = value;
-                            Navigator.of(context).pop();
-                          },
-                          activeColor: Theme.of(context).colorScheme.primary,
-                        );
-                      }),
-                    ],
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Gagal memuat kategori: $e', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Tutup', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-              )
-            ],
-          );
-        },
-      );
-    }
-  
-  void _confirmDeleteItem(BuildContext context, WidgetRef ref, Item item) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Hapus Barang', style: Theme.of(context).textTheme.titleLarge),
-          content: Text('Apakah Anda yakin ingin menghapus barang "${item.name}"?', style: Theme.of(context).textTheme.bodyMedium),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Gagal memuat kategori: $e', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop(); 
-                try {
-                  await ref.read(itemProvider.notifier).deleteItem(item.id);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Barang "${item.name}" berhasil dihapus.'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Gagal menghapus: ${e.toString()}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
-            ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Tutup', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            )
           ],
-        ),
-      );
-    }
+        );
+      },
+    );
+  }
+  
+  void _confirmDeleteItem(BuildContext context, WidgetRef ref, Item item) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Hapus Barang', style: Theme.of(context).textTheme.titleLarge),
+        content: Text('Apakah Anda yakin ingin menghapus barang "${item.name}"?', style: Theme.of(context).textTheme.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop(); 
+              try {
+                await ref.read(itemProvider.notifier).deleteItem(item.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Barang "${item.name}" berhasil dihapus.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal menghapus: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // New Widget for the Grid View Item
 class _ItemCard extends ConsumerWidget {
-  const _ItemCard({required this.item});
+  const _ItemCard({required this.item, required this.onDelete});
 
   final Item item;
+  final Function(Item) onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -383,10 +435,7 @@ class _ItemCard extends ConsumerWidget {
                   if (value == 'edit') {
                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => ItemFormPage(item: item)));
                   } else if (value == 'delete') {
-                    // We need to access the _ItemListPageState to call the dialog
-                    // A better way is to use a provider, but for simplicity, let's find the state
-                    final parentState = context.findAncestorStateOfType<_ItemListPageState>();
-                    parentState?._confirmDeleteItem(context, ref, item);
+                    onDelete(item);
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[

@@ -62,4 +62,23 @@ class AuthRepository {
       return null;
     }
   }
+
+  /// Cek status premium dari user preferences.
+  Future<bool> isUserPremium() async {
+    try {
+      final prefs = await _account.getPrefs();
+      return prefs.data['isPremium'] ?? false;
+    } catch (e) {
+      return false; // Anggap non-premium jika ada error
+    }
+  }
+
+  /// Update status premium user.
+  Future<void> updatePremiumStatus(bool isPremium) async {
+    try {
+      await _account.updatePrefs(prefs: {'isPremium': isPremium});
+    } on AppwriteException catch (e) {
+      throw e.message ?? 'Gagal memperbarui status premium.';
+    }
+  }
 }

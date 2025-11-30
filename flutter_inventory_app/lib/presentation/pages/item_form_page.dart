@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_inventory_app/domain/services/ad_service.dart';
+import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ItemFormPage extends ConsumerStatefulWidget {
@@ -33,10 +37,11 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   String? _selectedCategoryId;
   bool _isLoading = false;
 
-  // State for image handling
   File? _imageFile;
   String? _networkImageUrl;
   final ImagePicker _picker = ImagePicker();
+
+  InterstitialAd? _interstitialAd;
 
   @override
   void initState() {
@@ -53,10 +58,26 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _salePriceController = TextEditingController(text: item?.salePrice?.toStringAsFixed(0) ?? '');
     _selectedCategoryId = item?.categoryId;
 
-    if (item?.imageId != null) {
-      // Get the image URL from the service
-      _networkImageUrl = ref.read(itemServiceProvider).getImageUrl(item!.imageId!);
+    if (item?.imageId != null && item!.imageId!.isNotEmpty) {
+      _networkImageUrl = ref.read(itemServiceProvider).getImageUrl(item.imageId!);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadInterstitialAd();
+  }
+
+  void _loadInterstitialAd() {
+    if (kIsWeb || ref.read(authControllerProvider).isPremium) {
+      return;
+    }
+    ref.read(adServiceProvider).createInterstitialAd(
+      onAdLoaded: (ad) {
+        _interstitialAd = ad;
+      },
+    );
   }
 
   @override
@@ -70,19 +91,16 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _unitController.dispose();
     _purchasePriceController.dispose();
     _salePriceController.dispose();
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(
-      source: source,
-      imageQuality: 80, // Compress image
-      maxWidth: 800, // Resize image
-    );
+    final pickedFile = await _picker.pickImage(source: source, imageQuality: 80, maxWidth: 800);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
-        _networkImageUrl = null; // Clear network image if a new one is picked
+        _networkImageUrl = null;
       });
     }
   }
@@ -118,11 +136,11 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
+      bool success = false;
 
       final isEditMode = widget.item != null;
       final itemName = _nameController.text.trim();
 
-      // Cek duplikasi hanya jika ini adalah item baru atau nama item diubah
       if (!isEditMode || (isEditMode && itemName != widget.item!.name)) {
         final exists = await ref.read(itemServiceProvider).itemExists(name: itemName);
         if (mounted && exists) {
@@ -133,14 +151,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               title: Text('Barang Sudah Ada', style: Theme.of(context).textTheme.titleLarge),
               content: Text('Barang dengan nama "$itemName" sudah ada. Anda yakin ingin tetap menyimpannya?', style: Theme.of(context).textTheme.bodyMedium),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Ya, Tetap Simpan'),
-                ),
+                TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('Batal')),
+                ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Ya, Tetap Simpan')),
               ],
             ),
           );
@@ -151,7 +163,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         }
       }
 
-      // Populate item data from form fields
       final itemData = Item(
         id: widget.item?.id ?? '',
         userId: widget.item?.userId ?? '',
@@ -174,26 +185,40 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         } else {
           await ref.read(itemProvider.notifier).addItem(itemData, imagePath: _imageFile?.path);
         }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Barang berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          ref.invalidate(itemProvider);
-          Navigator.of(context).pop();
-        }
+        success = true;
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')));
         }
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);
+        }
+      }
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barang berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        ref.invalidate(itemProvider);
+
+        if (_interstitialAd != null) {
+          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              Navigator.of(context).pop();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              Navigator.of(context).pop();
+            }
+          );
+          _interstitialAd!.show();
+        } else {
+          Navigator.of(context).pop();
         }
       }
     }
@@ -217,7 +242,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildImagePicker(), // Image picker UI
+                    _buildImagePicker(),
                     const SizedBox(height: 16),
                     _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
                     _buildTextField(_barcodeController, 'Barcode (Opsional)', null),
@@ -260,9 +285,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     );
   }
   
-  // ... existing helper methods (_buildImagePicker, _buildTextField, etc) unchanged
-  // ... except for the errorBuilder in _buildImagePicker
-  
   Widget _buildImagePicker() {
     return Center(
       child: Stack(
@@ -288,7 +310,6 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                               return progress == null ? child : const Center(child: CircularProgressIndicator());
                             },
                             errorBuilder: (context, error, stackTrace) {
-                              // For debugging, show the actual error.
                               return Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(

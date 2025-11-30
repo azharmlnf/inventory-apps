@@ -40,7 +40,6 @@
 *   **Pengingat Restock:**
     *   [x] Implementasikan logika di sisi klien untuk mendeteksi stok rendah dari data yang diambil dari Appwrite.
     *   [x] Integrasi `flutter_local_notifications` untuk menampilkan notifikasi stok rendah.
-    *   [ ] (Opsional) Jelajahi Appwrite Functions untuk push notification di masa depan.
 *   **Pelaporan Sederhana:**
     *   [x] Buat `ReportPage` untuk menampilkan ringkasan stok.
     *   [x] Implementasikan query ke Appwrite untuk memfilter riwayat transaksi.
@@ -56,8 +55,8 @@
 
 #### Minggu 6: Implementasi Monetisasi
 *   **Monetisasi Iklan:**
-    *   [ ] Integrasi Google AdMob (`google_mobile_ads`) untuk menampilkan iklan banner.
-    *   [ ] Tampilkan iklan hanya jika pengguna bukan premium.
+    *   [x] Integrasi Google AdMob (`google_mobile_ads`) untuk menampilkan iklan banner.
+    *   [x] Tampilkan iklan hanya jika pengguna bukan premium.
 *   **Fitur Premium (Hapus Iklan):**
     *   [ ] Integrasi `in_app_purchase` Flutter plugin.
     *   [ ] Implementasikan logika untuk mengelola status premium pengguna.
@@ -74,3 +73,5 @@
 *   **Dokumentasi & Rilis:**
     *   [ ] Finalisasi dokumentasi teknis.
     *   [ ] Siapkan aset aplikasi dan konfigurasi untuk rilis di App Store/Play Store.
+*   **Monetisasi & Premium (Lanjutan):**
+    *   [ ] Implementasi Payment Gateway untuk pembelian fitur premium.

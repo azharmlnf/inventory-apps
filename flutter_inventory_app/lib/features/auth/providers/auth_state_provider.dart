@@ -8,22 +8,28 @@ class AuthState {
   final AuthStatus status;
   final models.User? user;
   final String? errorMessage;
+  final bool isPremium;
 
   AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.errorMessage,
+    this.isPremium = false,
   });
 
   AuthState copyWith({
     AuthStatus? status,
     models.User? user,
     String? errorMessage,
+    bool? isPremium,
   }) {
+    // When status is unauthenticated, user and isPremium should be cleared.
+    final bool shouldClear = status == AuthStatus.unauthenticated;
     return AuthState(
       status: status ?? this.status,
-      user: user ?? this.user,
+      user: shouldClear ? null : user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
+      isPremium: shouldClear ? false : isPremium ?? this.isPremium,
     );
   }
 }
@@ -36,21 +42,30 @@ class AuthController extends Notifier<AuthState> {
 
   AuthRepository get _authRepository => ref.watch(authRepositoryProvider);
 
-  Future<void> checkCurrentUser() async {
-    state = state.copyWith(status: AuthStatus.loading);
+  Future<void> _updateUserAndPremiumStatus() async {
     final user = await _authRepository.getCurrentUser();
     if (user != null) {
-      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      final isPremium = await _authRepository.isUserPremium();
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+        isPremium: isPremium,
+      );
     } else {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
+  }
+
+  Future<void> checkCurrentUser() async {
+    state = state.copyWith(status: AuthStatus.loading);
+    await _updateUserAndPremiumStatus();
   }
 
   Future<bool> signUp(String email, String password, String name) async {
     state = state.copyWith(status: AuthStatus.loading);
     try {
       await _authRepository.signUp(email: email, password: password, name: name);
-      state = state.copyWith(status: AuthStatus.unauthenticated, user: null); // Go to unauthenticated state
+      state = state.copyWith(status: AuthStatus.unauthenticated);
       return true;
     } catch (e) {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
@@ -59,13 +74,10 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> signIn(String email, String password) async {
-    // Don't set global loading state. Let the UI handle its own loading state.
     try {
       await _authRepository.signIn(email: email, password: password);
-      final user = await _authRepository.getCurrentUser();
-      state = state.copyWith(status: AuthStatus.authenticated, user: user, errorMessage: null);
+      await _updateUserAndPremiumStatus();
     } catch (e) {
-      // Rethrow the error to be caught by the UI.
       rethrow;
     }
   }
@@ -74,7 +86,7 @@ class AuthController extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
     try {
       await _authRepository.signOut();
-      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      state = state.copyWith(status: AuthStatus.unauthenticated);
     } catch (e) {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
     }
