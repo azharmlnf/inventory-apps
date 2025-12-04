@@ -55,15 +55,16 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
   }
 
   Future<void> addTransaction(Transaction transaction) async {
+    // Set state to loading
     state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(transactionServiceProvider).createTransaction(transaction));
-    state = await AsyncValue.guard(() => _fetchTransactions());
+    // Perform the mutation. The UI layer will invalidate the provider to trigger a re-fetch.
+    await ref.read(transactionServiceProvider).createTransaction(transaction);
   }
 
   Future<void> updateTransaction(Transaction transaction) async {
     state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(transactionServiceProvider).updateTransaction(transaction));
-    state = await AsyncValue.guard(() => _fetchTransactions());
+    // Perform the mutation. The UI layer will invalidate the provider to trigger a re-fetch.
+    await ref.read(transactionServiceProvider).updateTransaction(transaction);
   }
 
   Future<void> deleteTransaction(String transactionId) async {

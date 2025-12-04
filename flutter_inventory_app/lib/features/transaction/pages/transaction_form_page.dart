@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_providers.dart'; // Added this import
-import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart'; // Added this import
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
+import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
+import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 
 class TransactionFormPage extends ConsumerStatefulWidget {
   final Transaction? transaction;
@@ -24,6 +27,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   DateTime _selectedTransactionDate = DateTime.now();
   bool _isLoading = false;
 
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+  InterstitialAd? _interstitialAd;
+
   @override
   void initState() {
     super.initState();
@@ -33,12 +40,78 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     _selectedItemId = transaction?.itemId;
     _selectedType = transaction?.type ?? TransactionType.inType;
     _selectedTransactionDate = transaction?.date ?? DateTime.now();
+    // _loadBannerAd() is now called in didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isAdLoaded) {
+      _loadBannerAd();
+    }
+    _loadInterstitialAd();
+  }
+
+  void _loadBannerAd() {
+    if (ref.read(authControllerProvider).isPremium) {
+      return;
+    }
+
+    _bannerAd = ref.read(adServiceProvider).createBannerAd(
+      onAdLoaded: () {
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        }
+      },
+      onAdFailedToLoad: (error) {
+        _bannerAd?.dispose();
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = false;
+          });
+        }
+      },
+    );
+  }
+
+  void _loadInterstitialAd() {
+    if (ref.read(authControllerProvider).isPremium) {
+      return;
+    }
+    ref.read(adServiceProvider).createInterstitialAd(
+      onAdLoaded: (ad) {
+        _interstitialAd = ad;
+      },
+    );
+  }
+
+  void _showInterstitialAd(VoidCallback onAdDismissed) {
+    if (_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          onAdDismissed(); // Panggil callback setelah iklan ditutup
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          onAdDismissed(); // Langsung panggil callback jika iklan gagal tampil
+        },
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
+    } else {
+      onAdDismissed(); // Jika tidak ada iklan, langsung panggil callback
+    }
   }
 
   @override
   void dispose() {
     _quantityController.dispose();
     _noteController.dispose();
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
@@ -99,7 +172,12 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
           );
           ref.invalidate(transactionsProvider); // Invalidate transactionsProvider to refresh the list
           ref.invalidate(itemsProvider); // Invalidate itemsProvider as item quantities might have changed
-          Navigator.of(context).pop();
+          
+          _showInterstitialAd(() {
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          });
         }
       } catch (e) {
         if (mounted) {
@@ -126,40 +204,53 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    itemsAsync.when(
-                      data: (items) {
-                        // Ensure _selectedItemId is valid
-                        if (_selectedItemId != null && !items.any((item) => item.id == _selectedItemId)) {
-                          _selectedItemId = null;
-                        }
-                        return _buildItemDropdown(items);
-                      },
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (err, st) => Text('Gagal memuat barang: $err'),
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          itemsAsync.when(
+                            data: (items) {
+                              // Ensure _selectedItemId is valid
+                              if (_selectedItemId != null && !items.any((item) => item.id == _selectedItemId)) {
+                                _selectedItemId = null;
+                              }
+                              return _buildItemDropdown(items);
+                            },
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (err, st) => Text('Gagal memuat barang: $err'),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTransactionTypeDropdown(),
+                          const SizedBox(height: 16),
+                          _buildNumericField(_quantityController, 'Kuantitas', 'Kuantitas tidak boleh kosong'),
+                          const SizedBox(height: 16),
+                          _buildDateField(context),
+                          const SizedBox(height: 16),
+                          _buildTextField(_noteController, 'Catatan (Opsional)', null, maxLines: 3),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _submitForm,
+                            child: Text(isEditMode ? 'Simpan Perubahan' : 'Tambah Transaksi'),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildTransactionTypeDropdown(),
-                    const SizedBox(height: 16),
-                    _buildNumericField(_quantityController, 'Kuantitas', 'Kuantitas tidak boleh kosong'),
-                    const SizedBox(height: 16),
-                    _buildDateField(context),
-                    const SizedBox(height: 16),
-                    _buildTextField(_noteController, 'Catatan (Opsional)', null, maxLines: 3),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      child: Text(isEditMode ? 'Simpan Perubahan' : 'Tambah Transaksi'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                if (_bannerAd != null && _isAdLoaded)
+                  Container(
+                    alignment: Alignment.center,
+                    width: _bannerAd!.size.width.toDouble(),
+                    height: _bannerAd!.size.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
+                  ),
+              ],
             ),
     );
   }

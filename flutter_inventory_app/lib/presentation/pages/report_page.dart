@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:flutter_inventory_app/domain/services/export_service.dart';
+import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/home/providers/dashboard_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +16,53 @@ class ReportPage extends ConsumerStatefulWidget {
 }
 
 class _ReportPageState extends ConsumerState<ReportPage> {
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // _loadBannerAd() is now called in didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isAdLoaded) {
+      _loadBannerAd();
+    }
+  }
+
+  void _loadBannerAd() {
+    if (ref.read(authControllerProvider).isPremium) {
+      return;
+    }
+
+    _bannerAd = ref.read(adServiceProvider).createBannerAd(
+      onAdLoaded: () {
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        }
+      },
+      onAdFailedToLoad: (error) {
+        _bannerAd?.dispose();
+        if (mounted) {
+          setState(() {
+            _isAdLoaded = false;
+          });
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateRange = ref.watch(dateRangeProvider);
@@ -155,6 +205,13 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               ),
             ),
           ),
+          if (_bannerAd != null && _isAdLoaded)
+            Container(
+              alignment: Alignment.center,
+              width: _bannerAd!.size.width.toDouble(),
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
+            ),
         ],
       ),
     );

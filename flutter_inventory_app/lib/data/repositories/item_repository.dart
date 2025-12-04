@@ -135,12 +135,12 @@ class ItemRepository {
 
   /// Mendapatkan URL publik untuk preview gambar.
   String getItemImageUrl(String fileId) {
-    // URL-Structure: {endpoint}/storage/buckets/{bucketId}/files/{fileId}/preview?project={projectId}
-    const String endpoint = 'https://sgp.cloud.appwrite.io/v1';
-    const String projectId = '691431ef001f61d2ee98';
-    const String bucketId = AppConstants.itemImagesBucketId;
-    
-    return '$endpoint/storage/buckets/$bucketId/files/$fileId/preview?project=$projectId';
+    try {
+      // Build the URL manually using constants to avoid hardcoding and SDK return type issues.
+      return '${AppConstants.endpoint}/storage/buckets/${AppConstants.itemImagesBucketId}/files/$fileId/preview?project=${AppConstants.projectId}';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Menghapus gambar dari Appwrite Storage.
