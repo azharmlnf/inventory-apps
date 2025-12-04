@@ -137,7 +137,7 @@ class ItemRepository {
   String getItemImageUrl(String fileId) {
     try {
       // Build the URL manually using constants to avoid hardcoding and SDK return type issues.
-      return '${AppConstants.endpoint}/storage/buckets/${AppConstants.itemImagesBucketId}/files/$fileId/preview?project=${AppConstants.projectId}';
+      return '${AppConstants.endpoint}/storage/buckets/${AppConstants.itemImagesBucketId}/files/$fileId/view?project=${AppConstants.projectId}';
     } catch (e) {
       return '';
     }
