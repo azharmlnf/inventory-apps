@@ -217,7 +217,7 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (controller.text.isNotEmpty && controller.text != category.name) {
+              if (controller.text.isNotEmpty) { // Kondisi "!=" dihapus
                 // Tunggu proses update selesai
                 await ref.read(categoryProvider.notifier).updateCategory(categoryId: category.id, name: controller.text);
                 

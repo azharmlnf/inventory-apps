@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/home/home_page.dart';
+import 'package:flutter_inventory_app/presentation/pages/main_page.dart';
 import 'package:flutter_inventory_app/domain/services/notification_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -52,7 +53,7 @@ class MyApp extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           hintStyle: TextStyle(color: Colors.grey.shade600),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
+        elevatedButtonTheme: ElevatedButtonThemeData( // Corrected from ElevatedButtonData
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue.shade700,
             foregroundColor: Colors.white,
@@ -100,7 +101,7 @@ class _AuthCheckerState extends ConsumerState<AuthChecker> {
 
     switch (authState.status) {
       case AuthStatus.authenticated:
-        return const HomePage();
+        return const MainPage();
       case AuthStatus.unauthenticated:
       case AuthStatus.error:
         return const LoginPage();

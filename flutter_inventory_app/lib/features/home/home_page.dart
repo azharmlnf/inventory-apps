@@ -106,9 +106,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final currentUser = authState.user;
 
-    // Watch dashboard providers
+    // Watch dashboard providers - RE-ADDED
     final totalJenisBarangAsync = ref.watch(totalItemsCountProvider);
     final lowStockItemsAsync = ref.watch(lowStockItemsProvider);
     final transactionsTodayAsync = ref.watch(transactionsTodayProvider);
@@ -127,136 +126,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Inventarisku',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (currentUser != null)
-                    Text(
-                      currentUser.email,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.dashboard, color: Theme.of(context).colorScheme.primary),
-              title: Text('Dashboard', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                // Already on dashboard, no action needed, data is refreshed by ref.watch above
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.inventory, color: Theme.of(context).colorScheme.primary),
-              title: Text('Barang', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                ref.invalidate(itemsProvider); // Invalidate to force refresh on next access
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ItemListPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.category, color: Theme.of(context).colorScheme.primary),
-              title: Text('Kategori', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                ref.invalidate(categoriesProvider); // Invalidate to force refresh on next access
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const CategoryListPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.swap_horiz, color: Theme.of(context).colorScheme.primary),
-              title: Text('Transaksi', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                ref.invalidate(transactionsProvider); // Invalidate to force refresh on next access
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TransactionListPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary),
-              title: Text('Laporan', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ReportPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
-              title: Text('Aktivitas', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                ref.invalidate(activityLogsProvider); // Invalidate to force refresh on next access
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ActivityLogListPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-              title: Text('Pengaturan', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                // Navigate to Pengaturan page
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.workspace_premium, color: Theme.of(context).colorScheme.primary),
-              title: Text('Premium', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                _buyPremium(); // Call the new _buyPremium method
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
-              title: Text('Logout', style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                ref.read(authControllerProvider.notifier).signOut();
-              },
-            ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
         padding: const EdgeInsets.all(15.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,8 +304,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
