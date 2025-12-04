@@ -1,3 +1,5 @@
+import 'dart:async'; // Moved to top
+import 'package:in_app_purchase/in_app_purchase.dart'; // Moved to top
 import 'package:flutter_inventory_app/presentation/widgets/stock_chart.dart';
 import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
@@ -18,11 +20,91 @@ import 'package:flutter_inventory_app/features/transaction/providers/transaction
 import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
 
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  final String _premiumProductId = 'premium_access'; // Ganti dengan ID produk Anda
+
+  @override
+  void initState() {
+    super.initState();
+    final Stream<List<PurchaseDetails>> purchaseUpdated = _inAppPurchase.purchaseStream;
+    _subscription = purchaseUpdated.listen((purchaseDetailsList) {
+      _listenToPurchaseUpdated(purchaseDetailsList);
+    }, onDone: () {
+      _subscription.cancel();
+    }, onError: (error) {
+      // Handle error here.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error In-App Purchase: ${error.toString()}')),
+      );
+    });
+  }
+
+  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
+    for (var purchaseDetails in purchaseDetailsList) {
+      if (purchaseDetails.status == PurchaseStatus.purchased) {
+        // Pembelian berhasil, update status premium di Appwrite
+        ref.read(authControllerProvider.notifier).updatePremiumStatus(true).then((_) {
+          // Tampilkan notifikasi atau update UI bahwa user sudah premium
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Anda sekarang adalah pengguna premium!')),
+          );
+        });
+
+        if (purchaseDetails.pendingCompletePurchase) {
+          _inAppPurchase.completePurchase(purchaseDetails);
+        }
+      } else if (purchaseDetails.status == PurchaseStatus.error) {
+        // Handle error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi error pada pembelian: ${purchaseDetails.error?.message}')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> _buyPremium() async {
+    // 1. Cek ketersediaan layanan pembelian
+    final bool available = await _inAppPurchase.isAvailable();
+    if (!available) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Layanan pembelian tidak tersedia.')),
+      );
+      return;
+    }
+
+    // 2. Ambil detail produk
+    final ProductDetailsResponse productDetailResponse = await _inAppPurchase.queryProductDetails({_premiumProductId});
+    if (productDetailResponse.error != null || productDetailResponse.productDetails.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat produk: ${productDetailResponse.error?.message}')),
+        );
+        return;
+    }
+    
+    final ProductDetails productDetails = productDetailResponse.productDetails.first;
+
+    // 3. Buat parameter pembelian dan mulai proses
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+    _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final currentUser = authState.user;
 
@@ -154,12 +236,12 @@ class HomePage extends ConsumerWidget {
                 // Navigate to Pengaturan page
               },
             ),
-                        ListTile(
+            ListTile(
               leading: Icon(Icons.workspace_premium, color: Theme.of(context).colorScheme.primary),
               title: Text('Premium', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                // Navigate to premium page
+                _buyPremium(); // Call the new _buyPremium method
               },
             ),
             const Divider(),

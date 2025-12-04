@@ -91,6 +91,16 @@ class AuthController extends Notifier<AuthState> {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
     }
   }
+
+  Future<void> updatePremiumStatus(bool isPremium) async {
+    try {
+      await _authRepository.updatePremiumStatus(isPremium);
+      state = state.copyWith(isPremium: isPremium);
+    } catch (e) {
+      // Optionally handle or rethrow the error
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
   
   Future<models.User?> getCurrentUser() {
     return _authRepository.getCurrentUser();
