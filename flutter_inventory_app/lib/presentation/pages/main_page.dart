@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart';
+import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/home/home_page.dart';
@@ -7,8 +9,7 @@ import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart
 import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
-import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart'; // Add this import
-import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart'; // Add this import
+import 'package:flutter_inventory_app/presentation/pages/premium_page.dart'; // New import for PremiumPage
 
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
@@ -102,9 +103,11 @@ class _MainPageState extends ConsumerState<MainPage> {
               leading: Icon(Icons.workspace_premium, color: Theme.of(context).colorScheme.primary),
               title: Text('Premium', style: Theme.of(context).textTheme.bodyLarge),
               onTap: () {
-                // The _buyPremium logic is inside HomePage, this needs to be handled globally or moved.
-                // For now, just close the drawer.
-                Navigator.pop(context);
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PremiumPage()),
+                );
               },
             ),
             const Divider(),

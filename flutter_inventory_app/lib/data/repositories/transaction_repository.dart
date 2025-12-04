@@ -100,4 +100,18 @@ class TransactionRepository {
       throw e.message ?? 'Gagal menghapus transaksi.';
     }
   }
+
+  /// Mengambil satu transaksi berdasarkan ID-nya.
+  Future<Transaction> getTransactionById(String transactionId) async {
+    try {
+      final doc = await _databases.getDocument(
+        databaseId: AppConstants.databaseId,
+        collectionId: AppConstants.transactionsCollectionId,
+        documentId: transactionId,
+      );
+      return Transaction.fromDocument(doc);
+    } on AppwriteException catch (e) {
+      throw e.message ?? 'Gagal mengambil data transaksi.';
+    }
+  }
 }

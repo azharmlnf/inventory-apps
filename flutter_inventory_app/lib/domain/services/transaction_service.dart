@@ -101,18 +101,69 @@ class TransactionService {
   }
 
   Future<appwrite_models.Document> updateTransaction(Transaction transaction) async {
+    // 1. Get the original transaction to calculate the difference
+    final originalTransaction = await _transactionRepository.getTransactionById(transaction.id);
+    
+    // 2. Get the item to update its quantity
+    final itemToUpdate = await _itemRepository.getItemById(transaction.itemId);
+
+    // 3. Calculate the change in quantity
+    // First, revert the old transaction's effect
+    int revertedQuantity;
+    if (originalTransaction.type == TransactionType.inType) {
+      revertedQuantity = itemToUpdate.quantity - originalTransaction.quantity;
+    } else {
+      revertedQuantity = itemToUpdate.quantity + originalTransaction.quantity;
+    }
+    
+    // Second, apply the new transaction's effect
+    int newQuantity;
+    if (transaction.type == TransactionType.inType) {
+      newQuantity = revertedQuantity + transaction.quantity;
+    } else {
+      newQuantity = revertedQuantity - transaction.quantity;
+    }
+
+    // 4. Update the item with the new calculated quantity
+    final updatedItem = itemToUpdate.copyWith(quantity: newQuantity);
+    await _itemRepository.updateItem(updatedItem);
+
+    // 5. Now, update the transaction document itself
     final doc = await _transactionRepository.updateTransaction(transaction);
+    
+    // 6. Record activity
     await _activityLogService.recordActivity(
-      description: 'Memperbarui transaksi untuk item ID: ${transaction.itemId}',
+      description: 'Memperbarui transaksi untuk item: ${itemToUpdate.name}',
       itemId: transaction.itemId,
     );
     return doc;
   }
 
   Future<void> deleteTransaction(String transactionId) async {
+    // 1. Get the transaction to be deleted to know its quantity and type
+    final transactionToDelete = await _transactionRepository.getTransactionById(transactionId);
+    
+    // 2. Get the associated item
+    final itemToUpdate = await _itemRepository.getItemById(transactionToDelete.itemId);
+
+    // 3. Revert the stock based on the transaction type
+    int newQuantity;
+    if (transactionToDelete.type == TransactionType.inType) {
+      newQuantity = itemToUpdate.quantity - transactionToDelete.quantity;
+    } else {
+      newQuantity = itemToUpdate.quantity + transactionToDelete.quantity;
+    }
+
+    // 4. Update the item with the reverted quantity
+    final updatedItem = itemToUpdate.copyWith(quantity: newQuantity);
+    await _itemRepository.updateItem(updatedItem);
+    
+    // 5. Delete the transaction document
     await _transactionRepository.deleteTransaction(transactionId);
+    
+    // 6. Record activity
     await _activityLogService.recordActivity(
-      description: 'Menghapus transaksi ID: $transactionId',
+      description: 'Menghapus transaksi untuk item: ${itemToUpdate.name}',
     );
   }
 }
