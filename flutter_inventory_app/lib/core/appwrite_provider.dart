@@ -21,3 +21,8 @@ final appwriteStorageProvider = Provider<Storage>((ref) {
   final client = ref.watch(appwriteClientProvider);
   return Storage(client);
 });
+
+final appwriteFunctionProvider = Provider<Functions>((ref) {
+  final client = ref.watch(appwriteClientProvider);
+  return Functions(client);
+});

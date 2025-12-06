@@ -53,47 +53,68 @@
     *   [x] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
     *   [x] Integrasi `share_plus` untuk membagikan file ekspor.
 
-#### Minggu 6: Implementasi Monetisasi via Stripe (Alternatif)
+#### Minggu 6: Implementasi Monetisasi via Google Play Billing
 
-> **PERINGATAN KERAS:** Metode ini digunakan untuk tujuan pembelajaran dan **melanggar kebijakan Google Play & Apple App Store** untuk membuka fitur digital. Menggunakan alur pembayaran eksternal seperti ini membawa **risiko sangat tinggi aplikasi ditolak atau dihapus** jika dipublikasikan.
+> **Catatan:** Implementasi ini menggantikan metode pembayaran eksternal (seperti Stripe) dan mengikuti kebijakan Google Play Store untuk pembelian item digital. Arsitektur ini menggunakan validasi sisi server (server-side validation) untuk keamanan.
 
 *   **Arsitektur Sistem:**
-    1.  **Frontend:** Aplikasi Flutter memulai permintaan upgrade.
-    2.  **Backend 1:** Aplikasi memanggil **Appwrite Function #1** untuk membuat link pembayaran.
-    3.  **Stripe:** Appwrite Function #1 berkomunikasi dengan Stripe untuk membuat Sesi Checkout dan mendapatkan URL.
-    4.  **Frontend:** Aplikasi menerima URL Sesi Checkout dan membukanya di WebView/Browser.
-    5.  **Stripe:** Setelah pengguna membayar, Stripe mengirim notifikasi (webhook) ke backend.
-    6.  **Backend 2:** **Appwrite Function #2** menerima webhook, memverifikasinya, dan mengupdate status premium pengguna di database Appwrite.
+    1.  **Frontend (Flutter):** Aplikasi menggunakan package `in_app_purchase` untuk mengambil daftar produk dari Google Play Store dan memulai alur pembelian.
+    2.  **Google Play:** Menampilkan UI pembayaran standar kepada pengguna dan memproses transaksi.
+    3.  **Frontend (Flutter):** Setelah pembayaran berhasil, aplikasi menerima `PurchaseDetails` yang berisi `purchaseToken`.
+    4.  **Backend (Appwrite Function):** Aplikasi mengirim `purchaseToken` dan `productId` dari `PurchaseDetails` ke sebuah Appwrite Function baru yang akan kita buat (mis: `verify-google-play-purchase`).
+    5.  **Google Play Developer API:** Appwrite Function berkomunikasi dengan Google Play Developer API untuk memverifikasi keaslian dan status `purchaseToken`. Ini adalah langkah keamanan krusial untuk mencegah penipuan.
+    6.  **Backend (Appwrite Database):** Setelah token terverifikasi, Appwrite Function akan mengupdate data pengguna di Appwrite (misalnya, `prefs` atau koleksi `profiles`) untuk memberikan status "Premium".
+    7.  **Frontend (Flutter):** Aplikasi memanggil `InAppPurchase.instance.completePurchase()` untuk memberitahu Google Play bahwa produk telah diberikan ke pengguna. Ini dilakukan **hanya setelah** backend berhasil memvalidasi dan memberikan status premium.
 
-*   **Langkah 1: Konfigurasi Stripe**
-    *   [ ] Buat akun di Stripe (otomatis sudah ada mode testing/live).
-    *   [ ] Dapatkan **Publishable Key** dan **Secret Key** (dalam mode testing) dari dasbor Stripe.
-    *   [ ] Di dasbor Stripe (Developers -> Webhooks), buat **Webhook Endpoint** baru. URL ini akan menjadi URL publik dari Appwrite Function #2.
+*   **Langkah 1: Konfigurasi di Google Play Console & Google Cloud Console**
+    *   [ ] **Play Console:** Buat aplikasi Anda di [Google Play Console](https://play.google.com/console).
+    *   [ ] **Play Console:** Di bawah menu "Monetize", temukan **License testing** dan tambahkan email penguji. Penguji ini dapat membeli item tanpa dikenakan biaya.
+    *   [ ] **Play Console:** Di bawah menu "Monetize", buka **In-app products** dan buat produk baru (tipe: "One-time product").
+        *   Beri **Product ID** yang unik (mis: `premium_upgrade_v1`). ID ini akan digunakan di kode Flutter.
+        *   Isi detail produk (nama, deskripsi, harga) dan aktifkan.
+    *   [ ] **Google Cloud Console:** Tautkan proyek Google Cloud Anda dengan akun Play Console (Play Console > Setup > API Access).
+    *   [ ] **Google Cloud Console:** Aktifkan **Google Play Developer API**.
+    *   [ ] **Google Cloud Console:** Buat **Service Account**. Beri peran "Service Account User". Buat JSON key untuk service account ini dan unduh filenya. Konten dari file JSON ini akan digunakan sebagai *environment variable* di Appwrite Function.
 
-*   **Langkah 2: Backend dengan Appwrite Functions**
-    *   **Function #1: `create-stripe-checkout`**
-        *   [ ] Buat Appwrite Function baru (Node.js atau Dart).
-        *   [ ] Simpan Stripe **Secret Key** Anda dengan aman di *environment variables* function, **bukan** di dalam kode.
-        *   [ ] Tulis kode yang:
-            *   Menerima `userId` dan `amount` dari aplikasi Flutter.
-            *   Membuat parameter Sesi Checkout Stripe, termasuk `client_reference_id` untuk menyimpan `userId`.
-            *   Menggunakan `stripe` npm package untuk membuat sesi.
-            *   Mengembalikan `url` dari Sesi Checkout yang diterima dari Stripe ke aplikasi Flutter.
-    *   **Function #2: `handle-stripe-webhook`**
-        *   [ ] Buat Appwrite Function baru (Node.js atau Dart).
-        *   [ ] Simpan **Webhook Signing Secret** dari Stripe di *environment variables* function.
-        *   [ ] Tulis kode yang:
-            *   Menerima notifikasi `POST` dari Stripe.
-            *   Melakukan verifikasi *signature* untuk memastikan notifikasi valid dan aman.
-            *   Mendengarkan event `checkout.session.completed`, lalu ambil `client_reference_id` (yang berisi `userId`) dari objek sesi.
-            *   Menggunakan Appwrite Admin SDK untuk mencari pengguna berdasarkan `userId` dan mengupdate **Preferences** mereka menjadi `{ "isPremium": true }`.
+*   **Langkah 2: Backend dengan Appwrite Function (`verify-google-play-purchase`)**
+    *   [ ] Buat Appwrite Function baru (Node.js atau Dart).
+    *   [ ] Tambahkan *environment variables* di Settings function:
+        *   `GOOGLE_SERVICE_ACCOUNT_JSON`: Salin seluruh konten dari file JSON yang diunduh pada langkah sebelumnya.
+        *   `APPWRITE_API_KEY`: API Key Appwrite dengan scope `users.read` dan `users.write`.
+        *   `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`.
+    *   [ ] Tulis kode function yang:
+        *   Menerima `userId`, `purchaseToken`, dan `productId` dari aplikasi Flutter.
+        *   Menggunakan library Google API (mis: `googleapis` untuk Node.js) dan kredensial dari `GOOGLE_SERVICE_ACCOUNT_JSON` untuk membuat client API.
+        *   Memanggil `androidpublisher.purchases.products.get()` dengan `packageName`, `productId`, dan `purchaseToken`.
+        *   Memverifikasi bahwa `purchaseState` adalah `0` (Purchased) dan `consumptionState` adalah `0` (Not yet consumed).
+        *   Jika valid, gunakan Appwrite Admin SDK untuk mengupdate Preferences pengguna menjadi `{ "isPremium": true }`.
+        *   Mengembalikan status sukses atau gagal ke aplikasi Flutter.
 
 *   **Langkah 3: Frontend di Aplikasi Flutter**
-    *   [ ] Pasang package `url_launcher` untuk membuka URL di browser eksternal.
-    *   [ ] Di `home_page.dart` (atau halaman premium), buat fungsi `upgradeViaStripe()`.
-    *   [ ] Fungsi ini akan memanggil Appwrite Function #1 (`create-stripe-checkout`) dengan membawa User ID.
-    *   [ ] Setelah menerima `url` sesi dari function, gunakan `url_launcher` untuk membuka URL tersebut.
-    *   [ ] Tambahkan UI untuk memberitahu pengguna bahwa pembayaran sedang diproses dan status akan ter-update secara otomatis.
+    *   [ ] Tambahkan package `in_app_purchase` ke `pubspec.yaml`.
+    *   [ ] Buat sebuah `PurchaseService` atau `Provider` (Riverpod) untuk mengelola logika IAP (In-App Purchase).
+    *   [ ] **Inisialisasi:** Dengarkan stream `InAppPurchase.instance.purchaseStream` untuk memantau status pembelian.
+    *   [ ] **Ambil Produk:** Saat `PremiumPage` dimuat, panggil `InAppPurchase.instance.queryProductDetails()` dengan Product ID (`premium_upgrade_v1`) yang sudah dibuat.
+    *   [ ] **Tampilkan UI:** Tampilkan detail produk (harga, nama) yang diterima dari Play Store.
+    *   [ ] **Mulai Pembelian:** Saat tombol "Upgrade" ditekan, panggil `InAppPurchase.instance.buyNonConsumable()` dengan `PurchaseParam` yang sesuai.
+    *   [ ] **Proses Pembelian:** Di dalam listener `purchaseStream`:
+        *   Jika status `updated.status` adalah `PurchaseStatus.purchased`:
+            *   Tampilkan UI loading.
+            *   Panggil Appwrite Function `verify-google-play-purchase` dengan membawa `purchaseToken`.
+            *   Jika function merespons sukses:
+                *   Panggil `InAppPurchase.instance.completePurchase(updated)`.
+                *   Refresh state aplikasi untuk mengaktifkan fitur premium.
+            *   Jika gagal, tampilkan pesan error.
+        *   Jika statusnya `PurchaseStatus.error`, tampilkan error.
+        *   Jika statusnya `PurchaseStatus.restored`, lakukan proses validasi yang sama seperti `purchased`.
+    *   [ ] **Restore Purchase:** Sediakan tombol "Restore Purchases" yang memanggil `InAppPurchase.instance.restorePurchases()` untuk pengguna yang menginstal ulang aplikasi atau pindah perangkat.
+
+*   **Langkah 4: Testing & Rilis**
+    *   [ ] Login di perangkat Android dengan akun penguji yang didaftarkan di Play Console.
+    *   [ ] Jalankan aplikasi dalam mode rilis (`flutter run --release`). Pembelian sandbox terkadang tidak bekerja di mode debug.
+    *   [ ] Lakukan alur pembelian dari awal hingga akhir.
+    *   [ ] Verifikasi bahwa status premium pengguna terupdate di Appwrite dan UI aplikasi berubah.
+    *   [ ] Setelah yakin, unggah aplikasi (AAB) ke Play Console untuk rilis internal/terbuka.
 
 #### Minggu 7: Testing, Dokumentasi, dan Persiapan Rilis
 *   **Testing:**

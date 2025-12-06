@@ -45,7 +45,10 @@ class _MainPageState extends ConsumerState<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
+    // Watch providers
+    final authState = ref.watch(authControllerProvider);
+    final isPremium = authState.isPremium;
+    const goldColor = Color(0xFFFFD700);
 
     return Scaffold(
       appBar: AppBar(
@@ -61,28 +64,30 @@ class _MainPageState extends ConsumerState<MainPage> {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Inventarisku',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
-                  if (currentUser != null)
+                  if (authState.user?.email != null)
                     Text(
-                      currentUser.email!,
+                      authState.user!.email!,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
+                            color: Colors.white70,
+                          ),
                       overflow: TextOverflow.ellipsis,
                     ),
                 ],
               ),
             ),
             ListTile(
-              leading: Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
-              title: Text('Aktivitas', style: Theme.of(context).textTheme.bodyLarge),
+              leading: Icon(Icons.history, color: Theme.of(context).colorScheme.secondary),
+              title: Text('Aktivitas', style: Theme.of(context).textTheme.titleMedium),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
                 Navigator.push(
@@ -92,28 +97,40 @@ class _MainPageState extends ConsumerState<MainPage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-              title: Text('Pengaturan', style: Theme.of(context).textTheme.bodyLarge),
+              leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.secondary),
+              title: Text('Pengaturan', style: Theme.of(context).textTheme.titleMedium),
               onTap: () {
                 // TODO: Navigate to Pengaturan page
                 Navigator.pop(context);
               },
             ),
+            // ListTile "Premium" yang sudah dimodifikasi
             ListTile(
-              leading: Icon(Icons.workspace_premium, color: Theme.of(context).colorScheme.primary),
-              title: Text('Premium', style: Theme.of(context).textTheme.bodyLarge),
+              leading: Icon(
+                Icons.workspace_premium,
+                color: isPremium ? goldColor : Theme.of(context).colorScheme.secondary,
+              ),
+              title: Text(
+                isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: isPremium ? goldColor : null,
+                      fontWeight: isPremium ? FontWeight.bold : FontWeight.normal,
+                    ),
+              ),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PremiumPage()),
-                );
+                if (!isPremium) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PremiumPage()),
+                  );
+                }
               },
             ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
-              title: Text('Logout', style: Theme.of(context).textTheme.bodyLarge),
+              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+              title: Text('Logout', style: Theme.of(context).textTheme.titleMedium),
               onTap: () {
                 Navigator.pop(context); // Close the drawer
                 ref.read(authControllerProvider.notifier).signOut();
