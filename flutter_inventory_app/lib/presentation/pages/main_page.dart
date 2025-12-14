@@ -49,8 +49,6 @@ class _MainPageState extends ConsumerState<MainPage> {
     final authState = ref.watch(authControllerProvider);
     final isPremium = authState.isPremium;
     const goldColor = Color(0xFFFFD700);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     
     const neubrutalismAccent = Color(0xFFE84A5F);
     const neubrutalismBorder = Colors.black;
@@ -59,87 +57,115 @@ class _MainPageState extends ConsumerState<MainPage> {
       resizeToAvoidBottomInset: false,
       extendBody: true, 
       appBar: AppBar(
-        title: Text(_pageTitles[_selectedIndex]),
+        title: Text(
+          _pageTitles[_selectedIndex],
+          // Fix: Explicitly set text style for visibility
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFFF9F9F9),
+        foregroundColor: Colors.black, // This sets icon color
+        elevation: 0,
+        // Fix: Remove the actions block. AppBar will automatically add a menu icon
+        // for the drawer on the left.
+        actions: const [],
       ),
+      // Fix: Move the Drawer to the 'drawer' property to place it on the left
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        backgroundColor: const Color(0xFFF9F9F9),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Inventarisku',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+            // Header
+            NeuContainer(
+              color: const Color(0xFFBDBDBD), // A neutral color
+              borderRadius: BorderRadius.zero,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Inventarisku',
+                        style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (authState.user != null)
+                        Text(
+                          authState.user!.email,
+                          style: const TextStyle(
+                                color: Colors.black54,
+                              ),
+                          overflow: TextOverflow.ellipsis,
                         ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  if (authState.user != null && authState.user!.email != null)
-                    Text(
-                      authState.user!.email!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                          ),
-                      overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            // Menu Items
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                   _buildDrawerItem(
+                    icon: Icons.history,
+                    text: 'Aktivitas',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ActivityLogListPage()),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.settings,
+                    text: 'Pengaturan',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.workspace_premium,
+                    text: isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
+                    buttonColor: isPremium ? goldColor.withAlpha(50) : Colors.white,
+                    textColor: isPremium ? goldColor : Colors.black,
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (!isPremium) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const PremiumPage()),
+                        );
+                      }
+                    },
+                  ),
+                  // Divider
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                    child: NeuContainer(
+                      height: 3,
+                      width: double.infinity,
+                      color: Colors.black,
+                      borderRadius: BorderRadius.zero,
                     ),
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.logout,
+                    text: 'Logout',
+                    buttonColor: neubrutalismAccent.withAlpha(50),
+                    textColor: neubrutalismAccent,
+                    onTap: () {
+                      Navigator.pop(context);
+                      ref.read(authControllerProvider.notifier).signOut();
+                    },
+                  ),
                 ],
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.history, color: colorScheme.secondary),
-              title: Text('Aktivitas', style: theme.textTheme.titleMedium),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ActivityLogListPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings, color: colorScheme.secondary),
-              title: Text('Pengaturan', style: theme.textTheme.titleMedium),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.workspace_premium,
-                color: isPremium ? goldColor : colorScheme.secondary,
-              ),
-              title: Text(
-                isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
-                style: theme.textTheme.titleMedium?.copyWith(
-                      color: isPremium ? goldColor : null,
-                      fontWeight: isPremium ? FontWeight.bold : FontWeight.normal,
-                    ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                if (!isPremium) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PremiumPage()),
-                  );
-                }
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.logout, color: colorScheme.error),
-              title: Text('Logout', style: theme.textTheme.titleMedium),
-              onTap: () {
-                Navigator.pop(context);
-                ref.read(authControllerProvider.notifier).signOut();
-              },
             ),
           ],
         ),
@@ -204,6 +230,47 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
+  // Helper method for Neubrutalism Drawer items
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+    Color? buttonColor,
+    Color? textColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: NeuContainer(
+        color: buttonColor ?? Colors.white,
+        borderColor: Colors.black,
+        shadowColor: Colors.black,
+        borderRadius: BorderRadius.circular(8),
+        offset: const Offset(3, 3),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: textColor ?? Colors.black),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: textColor ?? Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildNeuNavItem({
     required IconData selectedIcon,
     required IconData unselectedIcon,
@@ -239,8 +306,7 @@ class _MainPageState extends ConsumerState<MainPage> {
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const TransactionFormPage())),
           child: const Icon(Icons.add),
         );
-      case 3: // Kategori
-        return null;
+      case 3: // Kategori (removed in last working version)
       default:
         return null;
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -33,7 +34,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (wasSuccessful && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful! Please login.'),
+            content: Text('Registrasi berhasil! Silakan login.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -48,7 +49,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (next.status == AuthStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.errorMessage ?? 'Registration Failed'),
+            content: Text(next.errorMessage ?? 'Registrasi Gagal'),
             backgroundColor: Colors.red,
           ),
         );
@@ -56,8 +57,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     });
 
     final authState = ref.watch(authControllerProvider);
+    
+    const neubrutalismAccent = Color(0xFFE84A5F);
+    const neubrutalismBorder = Colors.black;
+    const neubrutalismShadowOffset = Offset(4, 4);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F9F9),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: NeuIconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          enableAnimation: true,
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -67,82 +82,136 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.0),
                   child: Text(
                     'Buat Akun Baru',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+                    style: TextStyle(
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 const SizedBox(height: 24),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Lengkap',
-                    prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                NeuContainer(
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        hintText: 'Nama Lengkap',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.person_outline),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Mohon masukkan nama Anda';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Mohon masukkan nama Anda';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                NeuContainer(
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        hintText: 'Email',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty || !value.contains('@')) {
+                          return 'Mohon masukkan email yang valid';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || !value.contains('@')) {
-                      return 'Mohon masukkan email yang valid';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                NeuContainer(
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(
+                        hintText: 'Password',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.lock_outline),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty || value.length < 8) {
+                          return 'Password minimal 8 karakter';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || value.length < 8) {
-                      return 'Password minimal 8 karakter';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
                 authState.status == AuthStatus.loading
                     ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
+                    : NeuTextButton(
                         onPressed: _submit,
-                        child: const Text('Daftar'),
+                        enableAnimation: true,
+                        buttonColor: neubrutalismAccent,
+                        borderColor: neubrutalismBorder,
+                        shadowColor: neubrutalismBorder,
+                        offset: neubrutalismShadowOffset,
+                        borderRadius: BorderRadius.circular(12),
+                        text: const Text(
+                          'Daftar',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
                 const SizedBox(height: 20),
-                TextButton(
+                NeuTextButton(
                   onPressed: () {
-                            ref.read(authControllerProvider.notifier).resetStateToInitial();
-                            Navigator.of(context).pop();
-                          },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    textStyle: const TextStyle(
-                      fontSize: 16,
+                    ref.read(authControllerProvider.notifier).resetStateToInitial();
+                    Navigator.of(context).pop();
+                  },
+                  enableAnimation: true,
+                  buttonColor: Colors.white,
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  borderRadius: BorderRadius.circular(12),
+                  text: const Text(
+                    'Sudah punya akun? Login',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Sudah punya akun? Login'),
                 ),
               ],
             ),

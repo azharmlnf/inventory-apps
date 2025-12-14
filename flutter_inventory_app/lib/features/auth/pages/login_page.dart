@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/register_page.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -55,7 +56,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    const neubrutalismAccent = Color(0xFFE84A5F);
+    const neubrutalismBorder = Colors.black;
+    const neubrutalismShadowOffset = Offset(4, 4);
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F9F9),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -65,69 +71,112 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.0),
                   child: Text(
                     'Selamat Datang Kembali!',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+                    style: TextStyle(
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 const SizedBox(height: 24),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                NeuContainer(
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        hintText: 'Email',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty || !value.contains('@')) {
+                          return 'Mohon masukkan email yang valid';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || !value.contains('@')) {
-                      return 'Mohon masukkan email yang valid';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                NeuContainer(
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(
+                        hintText: 'Password',
+                        border: InputBorder.none,
+                        icon: Icon(Icons.lock_outline),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Mohon masukkan password Anda';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Mohon masukkan password Anda';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
+                    : NeuTextButton(
                         onPressed: _submit,
-                        child: const Text('Login'),
+                        enableAnimation: true,
+                        buttonColor: neubrutalismAccent,
+                        borderColor: neubrutalismBorder,
+                        shadowColor: neubrutalismBorder,
+                        offset: neubrutalismShadowOffset,
+                        borderRadius: BorderRadius.circular(12),
+                        text: const Text(
+                          'Login',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
                 const SizedBox(height: 20),
-                TextButton(
+                NeuTextButton(
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (context) => const RegisterPage()),
                     );
                   },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    textStyle: const TextStyle(
-                      fontSize: 16,
+                  enableAnimation: true,
+                  buttonColor: Colors.white,
+                  borderColor: neubrutalismBorder,
+                  shadowColor: neubrutalismBorder,
+                  offset: neubrutalismShadowOffset,
+                  borderRadius: BorderRadius.circular(12),
+                  text: const Text(
+                    'Belum punya akun? Daftar sekarang',
+                     textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Belum punya akun? Daftar sekarang'),
                 ),
               ],
             ),
