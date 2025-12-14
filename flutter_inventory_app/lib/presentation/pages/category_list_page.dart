@@ -26,6 +26,8 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
   InterstitialAd? _interstitialAd;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -85,6 +87,7 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _bannerAd?.dispose();
     _interstitialAd?.dispose();
     super.dispose();
@@ -97,23 +100,73 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
     return Scaffold(
       backgroundColor: _neubrutalismBg,
       appBar: AppBar(
-        title: const Text(
-          'Manajemen Kategori',
-          style: TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold),
-        ),
+        title: null, // Title removed
         backgroundColor: _neubrutalismBg,
         elevation: 0,
         iconTheme: const IconThemeData(color: _neubrutalismText),
       ),
       body: Column(
         children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: NeuContainer(
+              borderColor: _neubrutalismBorder,
+              borderWidth: _neubrutalismBorderWidth,
+              shadowColor: _neubrutalismBorder,
+              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Cari kategori...',
+                    border: InputBorder.none,
+                    icon: Icon(Icons.search, color: _neubrutalismText.withAlpha(100)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Add Category Button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: NeuTextButton(
+              enableAnimation: true,
+              buttonColor: _neubrutalismAccent,
+              borderColor: _neubrutalismBorder,
+              shadowColor: _neubrutalismBorder,
+              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+              borderRadius: BorderRadius.circular(12),
+              onPressed: () => _showCategoryFormBottomSheet(context),
+              text: const Text(
+                'Tambah Kategori',
+                textAlign: TextAlign.center, // Center the text
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          // Category List
           Expanded(
             child: categoriesAsyncValue.when(
               data: (categories) {
-                if (categories.isEmpty) {
+                final filteredCategories = categories.where((category) {
+                  return category.name.toLowerCase().contains(_searchQuery.toLowerCase());
+                }).toList();
+
+                if (filteredCategories.isEmpty) {
                   return Center(
                     child: Text(
-                      'Belum ada kategori.\nTekan tombol (+) untuk menambahkan.',
+                      _searchQuery.isEmpty
+                          ? 'Belum ada kategori.'
+                          : 'Kategori tidak ditemukan.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: _neubrutalismText.withAlpha(179)),
                     ),
@@ -122,59 +175,61 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
                 return RefreshIndicator(
                   onRefresh: () => ref.read(categoriesProvider.notifier).refreshCategories(),
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: categories.length,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    itemCount: filteredCategories.length,
                     itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return NeuContainer(
-                        borderColor: _neubrutalismBorder,
-                        borderWidth: _neubrutalismBorderWidth,
-                        shadowColor: _neubrutalismBorder,
-                        offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.white,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  category.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: _neubrutalismText,
+                      final category = filteredCategories[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: NeuContainer(
+                          borderColor: _neubrutalismBorder,
+                          borderWidth: _neubrutalismBorderWidth,
+                          shadowColor: _neubrutalismBorder,
+                          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    category.name,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: _neubrutalismText,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  NeuIconButton(
-                                    enableAnimation: true,
-                                    onPressed: () => _showCategoryFormBottomSheet(context, category: category),
-                                    buttonColor: Colors.yellow.shade200,
-                                    borderColor: _neubrutalismBorder,
-                                    shadowColor: _neubrutalismBorder,
-                                    offset: const Offset(3, 3),
-                                    borderRadius: BorderRadius.circular(8),
-                                    icon: const Icon(Icons.edit_outlined, size: 20),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  NeuIconButton(
-                                    enableAnimation: true,
-                                    onPressed: () => _confirmDeleteCategory(context, category),
-                                    buttonColor: _neubrutalismAccent.withAlpha(179),
-                                    borderColor: _neubrutalismBorder,
-                                    shadowColor: _neubrutalismBorder,
-                                    offset: const Offset(3, 3),
-                                    borderRadius: BorderRadius.circular(8),
-                                    icon: const Icon(Icons.delete_outline, size: 20),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    NeuIconButton(
+                                      enableAnimation: true,
+                                      onPressed: () => _showCategoryFormBottomSheet(context, category: category),
+                                      buttonColor: Colors.yellow.shade200,
+                                      borderColor: _neubrutalismBorder,
+                                      shadowColor: _neubrutalismBorder,
+                                      offset: const Offset(3, 3),
+                                      borderRadius: BorderRadius.circular(8),
+                                      icon: const Icon(Icons.edit_outlined, size: 20),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    NeuIconButton(
+                                      enableAnimation: true,
+                                      onPressed: () => _confirmDeleteCategory(context, category),
+                                      buttonColor: _neubrutalismAccent.withAlpha(179),
+                                      borderColor: _neubrutalismBorder,
+                                      shadowColor: _neubrutalismBorder,
+                                      offset: const Offset(3, 3),
+                                      borderRadius: BorderRadius.circular(8),
+                                      icon: const Icon(Icons.delete_outline, size: 20),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -200,23 +255,6 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
             ),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: NeuTextButton(
-          enableAnimation: true,
-          buttonColor: _neubrutalismAccent,
-          borderColor: _neubrutalismBorder,
-          shadowColor: _neubrutalismBorder,
-          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
-          borderRadius: BorderRadius.circular(12),
-          buttonHeight: 50,
-          onPressed: () => _showCategoryFormBottomSheet(context),
-          text: const Text(
-            'Tambah Kategori',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
     );
   }
 
@@ -225,16 +263,12 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
-      ),
       builder: (ctx) {
         return NeuContainer(
           color: _neubrutalismBg,
           borderColor: _neubrutalismBorder,
           borderWidth: _neubrutalismBorderWidth,
           shadowColor: _neubrutalismBorder,
-          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           child: _CategoryFormContent(
             category: category,
@@ -254,32 +288,26 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
           borderColor: _neubrutalismBorder,
           borderWidth: _neubrutalismBorderWidth,
           shadowColor: _neubrutalismBorder,
-          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
           borderRadius: BorderRadius.circular(16),
           child: AlertDialog(
             backgroundColor: Colors.transparent,
-            contentPadding: EdgeInsets.zero,
-            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            elevation: 0,
+            contentPadding: const EdgeInsets.all(20),
             title: const Text(
               'Konfirmasi Hapus',
               style: TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold),
             ),
-            content: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text.rich(
-                TextSpan(
-                  text: 'Anda yakin ingin menghapus kategori "',
-                  style: TextStyle(color: _neubrutalismText.withAlpha(179)),
-                  children: [
-                    TextSpan(
-                      text: category.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: _neubrutalismText),
-                    ),
-                    const TextSpan(text: '"?'),
-                  ],
-                ),
+            content: Text.rich(
+              TextSpan(
+                text: 'Anda yakin ingin menghapus kategori "',
+                style: TextStyle(color: _neubrutalismText.withAlpha(179)),
+                children: [
+                  TextSpan(
+                    text: category.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: _neubrutalismText),
+                  ),
+                  const TextSpan(text: '"?'),
+                ],
               ),
             ),
             actions: [
@@ -296,10 +324,9 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
               NeuTextButton(
                 enableAnimation: true,
                 onPressed: () async {
+                  Navigator.pop(dialogContext);
                   await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
-                  _showInterstitialAd(() {
-                    Navigator.pop(dialogContext);
-                  });
+                  _showInterstitialAd(() {});
                 },
                 buttonColor: _neubrutalismAccent,
                 borderColor: _neubrutalismBorder,
@@ -348,12 +375,10 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      final notifier = ref.read(categoriesProvider.notifier);
       final navigator = Navigator.of(context);
-      
       final future = _isEditing
-          ? notifier.updateCategory(widget.category!.id, _controller.text.trim())
-          : notifier.addCategory(_controller.text.trim());
+          ? ref.read(categoriesProvider.notifier).updateCategory(widget.category!.id, _controller.text.trim())
+          : ref.read(categoriesProvider.notifier).addCategory(_controller.text.trim());
 
       await future;
 
@@ -396,7 +421,6 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
               borderColor: _neubrutalismBorder,
               borderWidth: _neubrutalismBorderWidth,
               shadowColor: _neubrutalismBorder,
-              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
               borderRadius: BorderRadius.circular(12),
               color: Colors.white,
               child: Padding(
@@ -408,7 +432,6 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
                     labelStyle: TextStyle(color: _neubrutalismText.withAlpha(179)),
                     border: InputBorder.none,
                     filled: false,
-                    floatingLabelBehavior: FloatingLabelBehavior.never,
                   ),
                   style: const TextStyle(color: _neubrutalismText),
                   autofocus: true,
@@ -429,7 +452,6 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
               buttonColor: _neubrutalismAccent,
               borderColor: _neubrutalismBorder,
               shadowColor: _neubrutalismBorder,
-              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
               borderRadius: BorderRadius.circular(12),
               onPressed: _submit,
               buttonHeight: 50,
