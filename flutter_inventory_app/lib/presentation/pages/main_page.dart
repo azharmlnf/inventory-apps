@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,12 +46,18 @@ class _MainPageState extends ConsumerState<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch providers
     final authState = ref.watch(authControllerProvider);
     final isPremium = authState.isPremium;
     const goldColor = Color(0xFFFFD700);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    const neubrutalismAccent = Color(0xFFE84A5F);
+    const neubrutalismBorder = Colors.black;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
+      extendBody: true, 
       appBar: AppBar(
         title: Text(_pageTitles[_selectedIndex]),
       ),
@@ -60,7 +67,7 @@ class _MainPageState extends ConsumerState<MainPage> {
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,16 +75,16 @@ class _MainPageState extends ConsumerState<MainPage> {
                 children: [
                   Text(
                     'Inventarisku',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 8),
-                  if (authState.user?.email != null)
+                  if (authState.user != null && authState.user!.email != null)
                     Text(
                       authState.user!.email!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
                           ),
                       overflow: TextOverflow.ellipsis,
@@ -86,10 +93,10 @@ class _MainPageState extends ConsumerState<MainPage> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.history, color: Theme.of(context).colorScheme.secondary),
-              title: Text('Aktivitas', style: Theme.of(context).textTheme.titleMedium),
+              leading: Icon(Icons.history, color: colorScheme.secondary),
+              title: Text('Aktivitas', style: theme.textTheme.titleMedium),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ActivityLogListPage()),
@@ -97,28 +104,26 @@ class _MainPageState extends ConsumerState<MainPage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.secondary),
-              title: Text('Pengaturan', style: Theme.of(context).textTheme.titleMedium),
+              leading: Icon(Icons.settings, color: colorScheme.secondary),
+              title: Text('Pengaturan', style: theme.textTheme.titleMedium),
               onTap: () {
-                // TODO: Navigate to Pengaturan page
                 Navigator.pop(context);
               },
             ),
-            // ListTile "Premium" yang sudah dimodifikasi
             ListTile(
               leading: Icon(
                 Icons.workspace_premium,
-                color: isPremium ? goldColor : Theme.of(context).colorScheme.secondary,
+                color: isPremium ? goldColor : colorScheme.secondary,
               ),
               title: Text(
                 isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                       color: isPremium ? goldColor : null,
                       fontWeight: isPremium ? FontWeight.bold : FontWeight.normal,
                     ),
               ),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 if (!isPremium) {
                   Navigator.push(
                     context,
@@ -129,56 +134,95 @@ class _MainPageState extends ConsumerState<MainPage> {
             ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
-              title: Text('Logout', style: Theme.of(context).textTheme.titleMedium),
+              leading: Icon(Icons.logout, color: colorScheme.error),
+              title: Text('Logout', style: theme.textTheme.titleMedium),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 ref.read(authControllerProvider.notifier).signOut();
               },
             ),
           ],
         ),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _widgetOptions,
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _widgetOptions,
+        ),
       ),
       floatingActionButton: _buildFloatingActionButton(context),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
+      bottomNavigationBar: NeuContainer(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNeuNavItem(
+                  selectedIcon: Icons.home,
+                  unselectedIcon: Icons.home_outlined,
+                  index: 0,
+                  accentColor: neubrutalismAccent,
+                  borderColor: neubrutalismBorder,
+                ),
+                _buildNeuNavItem(
+                  selectedIcon: Icons.inventory_2,
+                  unselectedIcon: Icons.inventory_2_outlined,
+                  index: 1,
+                  accentColor: neubrutalismAccent,
+                  borderColor: neubrutalismBorder,
+                ),
+                _buildNeuNavItem(
+                  selectedIcon: Icons.swap_horiz_sharp,
+                  unselectedIcon: Icons.swap_horiz,
+                  index: 2,
+                  accentColor: neubrutalismAccent,
+                  borderColor: neubrutalismBorder,
+                ),
+                _buildNeuNavItem(
+                  selectedIcon: Icons.category,
+                  unselectedIcon: Icons.category_outlined,
+                  index: 3,
+                  accentColor: neubrutalismAccent,
+                  borderColor: neubrutalismBorder,
+                ),
+                _buildNeuNavItem(
+                  selectedIcon: Icons.assessment,
+                  unselectedIcon: Icons.assessment_outlined,
+                  index: 4,
+                  accentColor: neubrutalismAccent,
+                  borderColor: neubrutalismBorder,
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_2_outlined),
-            activeIcon: Icon(Icons.inventory_2),
-            label: 'Barang',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.swap_horiz),
-            activeIcon: Icon(Icons.swap_horiz_sharp),
-            label: 'Transaksi',
-          ),
-           BottomNavigationBarItem(
-            icon: Icon(Icons.category_outlined),
-            activeIcon: Icon(Icons.category),
-            label: 'Kategori',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assessment_outlined),
-            activeIcon: Icon(Icons.assessment),
-            label: 'Laporan',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Good for 3-5 items
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNeuNavItem({
+    required IconData selectedIcon,
+    required IconData unselectedIcon,
+    required int index,
+    required Color accentColor,
+    required Color borderColor,
+  }) {
+    final bool isSelected = _selectedIndex == index;
+    return NeuIconButton(
+      enableAnimation: true,
+      onPressed: () => _onItemTapped(index),
+      buttonColor: isSelected ? accentColor : Colors.white,
+      shadowColor: borderColor,
+      borderColor: borderColor,
+      buttonHeight: 60,
+      buttonWidth: 60,
+      icon: Icon(
+        isSelected ? selectedIcon : unselectedIcon,
+        color: isSelected ? Colors.white : borderColor,
       ),
     );
   }
@@ -196,9 +240,6 @@ class _MainPageState extends ConsumerState<MainPage> {
           child: const Icon(Icons.add),
         );
       case 3: // Kategori
-        // The dialog logic is inside CategoryListPage, so we can't call it directly.
-        // As a simple solution, we don't show a FAB, user can use the one on the page.
-        // A better long-term solution would be to refactor the dialog logic.
         return null;
       default:
         return null;

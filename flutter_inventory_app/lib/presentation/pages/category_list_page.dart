@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
-import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
+
+// Top-level constants for Neubrutalism style
+const Color _neubrutalismBg = Color(0xFFF9F9F9);
+const Color _neubrutalismAccent = Color(0xFFE84A5F);
+const Color _neubrutalismText = Colors.black;
+const Color _neubrutalismBorder = Colors.black;
+const double _neubrutalismBorderWidth = 3.0;
+const double _neubrutalismShadowOffset = 5.0;
 
 class CategoryListPage extends ConsumerStatefulWidget {
   const CategoryListPage({super.key});
@@ -21,52 +30,35 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
   @override
   void initState() {
     super.initState();
-    // _loadBannerAd() is now called in didChangeDependencies
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Load the ad here to handle rebuilds, e.g., after a dialog closes.
-    if (!_isAdLoaded) {
+    final isPremium = ref.watch(authControllerProvider).isPremium;
+    if (!isPremium && !_isAdLoaded) {
       _loadBannerAd();
     }
-    _loadInterstitialAd();
+    if (!isPremium) {
+      _loadInterstitialAd();
+    }
   }
 
   void _loadBannerAd() {
-    // Jangan tampilkan iklan jika user premium
-    if (ref.read(authControllerProvider).isPremium) {
-      return;
-    }
-
     _bannerAd = ref.read(adServiceProvider).createBannerAd(
-      onAdLoaded: () { // Callback tanpa parameter 'ad'
-        if (mounted) {
-          setState(() {
-            _isAdLoaded = true;
-          });
-        }
+      onAdLoaded: () {
+        if (mounted) setState(() => _isAdLoaded = true);
       },
-      onAdFailedToLoad: (error) { // Callback dengan satu parameter 'error'
-        _bannerAd?.dispose(); // Dispose banner ad yang gagal dimuat
-        if (mounted) {
-          setState(() { // Opsional: set _isAdLoaded ke false jika ingin UI bereaksi
-            _isAdLoaded = false;
-          });
-        }
+      onAdFailedToLoad: (error) {
+        _bannerAd?.dispose();
+        if (mounted) setState(() => _isAdLoaded = false);
       },
     );
   }
 
   void _loadInterstitialAd() {
-    if (ref.read(authControllerProvider).isPremium) {
-      return;
-    }
     ref.read(adServiceProvider).createInterstitialAd(
-      onAdLoaded: (ad) {
-        _interstitialAd = ad;
-      },
+      onAdLoaded: (ad) => _interstitialAd = ad,
     );
   }
 
@@ -75,19 +67,19 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
-          _loadInterstitialAd(); // Muat iklan baru untuk aksi berikutnya
-          onAdDismissed(); // Panggil callback setelah iklan ditutup
+          _loadInterstitialAd();
+          onAdDismissed();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           ad.dispose();
           _loadInterstitialAd();
-          onAdDismissed(); // Langsung panggil callback jika iklan gagal tampil
+          onAdDismissed();
         },
       );
       _interstitialAd!.show();
-      _interstitialAd = null; // Set null agar tidak ditampilkan dua kali
+      _interstitialAd = null;
     } else {
-      onAdDismissed(); // Jika tidak ada iklan (misal: user premium), langsung panggil callback
+      onAdDismissed();
     }
   }
 
@@ -100,11 +92,18 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsyncValue = ref.watch(categoryProvider);
+    final categoriesAsyncValue = ref.watch(categoriesProvider);
 
     return Scaffold(
+      backgroundColor: _neubrutalismBg,
       appBar: AppBar(
-        title: const Text('Manajemen Kategori'),
+        title: const Text(
+          'Manajemen Kategori',
+          style: TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: _neubrutalismBg,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _neubrutalismText),
       ),
       body: Column(
         children: [
@@ -112,151 +111,335 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
             child: categoriesAsyncValue.when(
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(child: Text('Belum ada kategori. Tambahkan satu!'));
+                  return Center(
+                    child: Text(
+                      'Belum ada kategori.\nTekan tombol (+) untuk menambahkan.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: _neubrutalismText.withAlpha(179)),
+                    ),
+                  );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(12.0),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        title: Text(
-                          category.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                return RefreshIndicator(
+                  onRefresh: () => ref.read(categoriesProvider.notifier).refreshCategories(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return NeuContainer(
+                        borderColor: _neubrutalismBorder,
+                        borderWidth: _neubrutalismBorderWidth,
+                        shadowColor: _neubrutalismBorder,
+                        offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  category.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: _neubrutalismText,
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  NeuIconButton(
+                                    enableAnimation: true,
+                                    onPressed: () => _showCategoryFormBottomSheet(context, category: category),
+                                    buttonColor: Colors.yellow.shade200,
+                                    borderColor: _neubrutalismBorder,
+                                    shadowColor: _neubrutalismBorder,
+                                    offset: const Offset(3, 3),
+                                    borderRadius: BorderRadius.circular(8),
+                                    icon: const Icon(Icons.edit_outlined, size: 20),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  NeuIconButton(
+                                    enableAnimation: true,
+                                    onPressed: () => _confirmDeleteCategory(context, category),
+                                    buttonColor: _neubrutalismAccent.withAlpha(179),
+                                    borderColor: _neubrutalismBorder,
+                                    shadowColor: _neubrutalismBorder,
+                                    offset: const Offset(3, 3),
+                                    borderRadius: BorderRadius.circular(8),
+                                    icon: const Icon(Icons.delete_outline, size: 20),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
-                              onPressed: () => _showEditCategoryDialog(context, ref, category),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                              onPressed: () => _confirmDeleteCategory(context, ref, category),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Error: $error')),
+              loading: () => const Center(child: CircularProgressIndicator(color: _neubrutalismAccent)),
+              error: (error, stack) => Center(
+                child: Text('Gagal memuat data: $error', textAlign: TextAlign.center, style: const TextStyle(color: _neubrutalismText)),
+              ),
             ),
           ),
           if (_bannerAd != null && _isAdLoaded)
-            Container(
-              alignment: Alignment.center,
-              width: _bannerAd!.size.width.toDouble(),
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
+            SafeArea(
+              top: false,
+              child: Container(
+                alignment: Alignment.center,
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCategoryDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
-    final TextEditingController controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Tambah Kategori Baru', style: Theme.of(context).textTheme.titleLarge),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Nama Kategori'),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: NeuTextButton(
+          enableAnimation: true,
+          buttonColor: _neubrutalismAccent,
+          borderColor: _neubrutalismBorder,
+          shadowColor: _neubrutalismBorder,
+          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+          borderRadius: BorderRadius.circular(12),
+          buttonHeight: 50,
+          onPressed: () => _showCategoryFormBottomSheet(context),
+          text: const Text(
+            'Tambah Kategori',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await ref.read(categoryProvider.notifier).addCategory(name: controller.text);
-                _showInterstitialAd(() {
-                  Navigator.pop(dialogContext);
-                });
-              }
-            },
-            child: const Text('Tambah'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showEditCategoryDialog(BuildContext context, WidgetRef ref, Category category) {
-    final TextEditingController controller = TextEditingController(text: category.name);
+  void _showCategoryFormBottomSheet(BuildContext context, {Category? category}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(0)),
+      ),
+      builder: (ctx) {
+        return NeuContainer(
+          color: _neubrutalismBg,
+          borderColor: _neubrutalismBorder,
+          borderWidth: _neubrutalismBorderWidth,
+          shadowColor: _neubrutalismBorder,
+          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: _CategoryFormContent(
+            category: category,
+            showInterstitialAd: _showInterstitialAd,
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteCategory(BuildContext context, Category category) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Edit Kategori', style: Theme.of(context).textTheme.titleLarge),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Nama Kategori'),
+      builder: (dialogContext) {
+        return NeuContainer(
+          color: _neubrutalismBg,
+          borderColor: _neubrutalismBorder,
+          borderWidth: _neubrutalismBorderWidth,
+          shadowColor: _neubrutalismBorder,
+          offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+          borderRadius: BorderRadius.circular(16),
+          child: AlertDialog(
+            backgroundColor: Colors.transparent,
+            contentPadding: EdgeInsets.zero,
+            titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            title: const Text(
+              'Konfirmasi Hapus',
+              style: TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold),
+            ),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text.rich(
+                TextSpan(
+                  text: 'Anda yakin ingin menghapus kategori "',
+                  style: TextStyle(color: _neubrutalismText.withAlpha(179)),
+                  children: [
+                    TextSpan(
+                      text: category.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: _neubrutalismText),
+                    ),
+                    const TextSpan(text: '"?'),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              NeuTextButton(
+                enableAnimation: true,
+                onPressed: () => Navigator.pop(dialogContext),
+                buttonColor: Colors.white,
+                borderColor: _neubrutalismBorder,
+                shadowColor: _neubrutalismBorder,
+                offset: const Offset(3, 3),
+                borderRadius: BorderRadius.circular(8),
+                text: const Text('Batal', style: TextStyle(color: _neubrutalismText)),
+              ),
+              NeuTextButton(
+                enableAnimation: true,
+                onPressed: () async {
+                  await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
+                  _showInterstitialAd(() {
+                    Navigator.pop(dialogContext);
+                  });
+                },
+                buttonColor: _neubrutalismAccent,
+                borderColor: _neubrutalismBorder,
+                shadowColor: _neubrutalismBorder,
+                offset: const Offset(3, 3),
+                borderRadius: BorderRadius.circular(8),
+                text: const Text('Hapus', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryFormContent extends ConsumerStatefulWidget {
+  final Category? category;
+  final void Function(VoidCallback) showInterstitialAd;
+
+  const _CategoryFormContent({
+    this.category,
+    required this.showInterstitialAd,
+  });
+
+  @override
+  ConsumerState<_CategoryFormContent> createState() => __CategoryFormContentState();
+}
+
+class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _controller;
+  bool get _isEditing => widget.category != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.category?.name);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState!.validate()) {
+      final notifier = ref.read(categoriesProvider.notifier);
+      final navigator = Navigator.of(context);
+      
+      final future = _isEditing
+          ? notifier.updateCategory(widget.category!.id, _controller.text.trim())
+          : notifier.addCategory(_controller.text.trim());
+
+      await future;
+
+      widget.showInterstitialAd(() {
+        if (mounted) {
+          navigator.pop();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final keyboardPadding = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: 24,
+        left: 16,
+        right: 16,
+        bottom: keyboardPadding + 16,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _isEditing ? 'Edit Kategori' : 'Kategori Baru',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: _neubrutalismText,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            NeuContainer(
+              borderColor: _neubrutalismBorder,
+              borderWidth: _neubrutalismBorderWidth,
+              shadowColor: _neubrutalismBorder,
+              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextFormField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Kategori',
+                    labelStyle: TextStyle(color: _neubrutalismText.withAlpha(179)),
+                    border: InputBorder.none,
+                    filled: false,
+                    floatingLabelBehavior: FloatingLabelBehavior.never,
+                  ),
+                  style: const TextStyle(color: _neubrutalismText),
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submit(),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Nama kategori tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            NeuTextButton(
+              enableAnimation: true,
+              buttonColor: _neubrutalismAccent,
+              borderColor: _neubrutalismBorder,
+              shadowColor: _neubrutalismBorder,
+              offset: const Offset(_neubrutalismShadowOffset, _neubrutalismShadowOffset),
+              borderRadius: BorderRadius.circular(12),
+              onPressed: _submit,
+              buttonHeight: 50,
+              text: Text(
+                _isEditing ? 'Simpan' : 'Tambah',
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) { // Kondisi "!=" dihapus
-                // Tunggu proses update selesai
-                await ref.read(categoryProvider.notifier).updateCategory(categoryId: category.id, name: controller.text);
-                
-                // Tampilkan iklan, dan pop context dialog setelah iklan ditutup
-                _showInterstitialAd(() {
-                  Navigator.pop(dialogContext);
-                });
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDeleteCategory(BuildContext context, WidgetRef ref, Category category) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Kategori', style: Theme.of(context).textTheme.titleLarge),
-        content: Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?', style: Theme.of(context).textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await ref.read(categoryProvider.notifier).deleteCategory(categoryId: category.id);
-              _showInterstitialAd(() {
-                Navigator.pop(dialogContext);
-              });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
