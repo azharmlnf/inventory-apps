@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
+import 'package:intl/intl.dart';
+
 import 'package:flutter_inventory_app/data/models/item.dart';
-import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
-import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
+import 'package:flutter_inventory_app/features/item/pages/item_form_page.dart';
+
+const Color _neubrutalismBg = Color(0xFFF9F9F9);
+const Color _neubrutalismAccent = Color(0xFFE84A5F);
+const Color _neubrutalismBorder = Colors.black;
+const Offset _neubrutalismShadowOffset = Offset(4, 4);
 
 class ItemDetailPage extends ConsumerWidget {
   final Item item;
@@ -12,8 +20,7 @@ class ItemDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Helper untuk mendapatkan nama kategori dari ID
-    final categoryName = ref.watch(categoryProvider).when(
+    final categoryName = ref.watch(categoriesProvider).when(
           data: (categories) {
             try {
               return categories.firstWhere((cat) => cat.id == item.categoryId).name;
@@ -30,19 +37,24 @@ class ItemDetailPage extends ConsumerWidget {
         : null;
 
     return Scaffold(
+      backgroundColor: _neubrutalismBg,
       appBar: AppBar(
-        title: Text(item.name),
+        title: Text(item.name, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: _neubrutalismBg,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
-          IconButton(
-            icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onPrimary),
-            tooltip: 'Edit Barang',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => ItemFormPage(item: item),
-                ),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: NeuIconButton(
+              enableAnimation: true,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => ItemFormPage(item: item)),
+                );
+              },
+              icon: const Icon(Icons.edit_outlined, color: Colors.black),
+            ),
           ),
         ],
       ),
@@ -78,15 +90,15 @@ class ItemDetailPage extends ConsumerWidget {
               if (item.quantity <= item.minQuantity)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Peringatan: Stok Rendah!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+                  child: NeuContainer(
+                    color: Colors.red.withAlpha(50),
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Text(
+                        'Peringatan: Stok Rendah!',
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -97,8 +109,8 @@ class ItemDetailPage extends ConsumerWidget {
             context,
             'Informasi Harga',
             [
-              _buildDetailRow(context, 'Harga Beli', 'Rp ${item.purchasePrice?.toStringAsFixed(0) ?? '0'}'),
-              _buildDetailRow(context, 'Harga Jual', 'Rp ${item.salePrice?.toStringAsFixed(0) ?? '0'}'),
+              _buildDetailRow(context, 'Harga Beli', NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(item.purchasePrice ?? 0)),
+              _buildDetailRow(context, 'Harga Jual', NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(item.salePrice ?? 0)),
             ],
           ),
         ],
@@ -107,70 +119,59 @@ class ItemDetailPage extends ConsumerWidget {
   }
 
   Widget _buildItemImage(BuildContext context, String imageUrl) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      clipBehavior: Clip.antiAlias,
-      child: Image.network(
-        imageUrl,
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          return progress == null ? child : const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (context, error, stackTrace) {
-          // Pass the actual error to the placeholder for debugging
-          return _buildImagePlaceholder(context, hasError: true, error: error);
-        },
+    return NeuContainer(
+      borderColor: _neubrutalismBorder,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          imageUrl,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+          errorBuilder: (_, error, __) => _buildImagePlaceholder(context, hasError: true, error: error),
+        ),
       ),
     );
   }
 
   Widget _buildImagePlaceholder(BuildContext context, {bool hasError = false, Object? error}) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        height: 200,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              hasError ? Icons.error_outline : Icons.image_not_supported_outlined,
-              size: 60,
-              color: hasError ? Colors.red : Colors.grey[400],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hasError ? 'Gagal Memuat Gambar' : 'Tidak Ada Gambar',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            ),
-            // Display the actual error if available
-            if (hasError && error != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  error.toString(),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
-                ),
-              ),
-          ],
-        ),
+    return NeuContainer(
+      borderColor: _neubrutalismBorder,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.grey[200],
+      height: 200,
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            hasError ? Icons.error_outline : Icons.image_not_supported_outlined,
+            size: 60,
+            color: hasError ? Colors.red : Colors.grey[400],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasError ? 'Gagal Memuat Gambar' : 'Tidak Ada Gambar',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildDetailCard(BuildContext context, String title, List<Widget> children) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    return NeuContainer(
+      borderColor: _neubrutalismBorder,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -178,9 +179,17 @@ class ItemDetailPage extends ConsumerWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const Divider(height: 20, thickness: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: NeuContainer(
+                width: double.infinity,
+                height: 2,
+                color: _neubrutalismBorder,
+                borderRadius: BorderRadius.zero,
+              ),
+            ),
             ...children,
           ],
         ),
@@ -197,14 +206,14 @@ class ItemDetailPage extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+            style: TextStyle(color: Colors.grey.shade600),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
             ),
           ),
         ],

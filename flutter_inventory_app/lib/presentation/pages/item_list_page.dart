@@ -1,20 +1,25 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/intl.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
+
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
-import 'package:flutter_inventory_app/features/category/providers/category_provider.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_search_provider.dart';
 import 'package:flutter_inventory_app/presentation/pages/item_detail_page.dart';
-import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_inventory_app/features/item/pages/item_form_page.dart';
 
+const Color _neubrutalismBg = Color(0xFFF9F9F9);
+const Color _neubrutalismAccent = Color(0xFFE84A5F);
+const Color _neubrutalismBorder = Colors.black;
+const Offset _neubrutalismShadowOffset = Offset(4, 4);
 
 class ItemListPage extends ConsumerStatefulWidget {
   const ItemListPage({super.key});
@@ -26,7 +31,6 @@ class ItemListPage extends ConsumerStatefulWidget {
 class _ItemListPageState extends ConsumerState<ItemListPage> {
   final _searchController = TextEditingController();
   Timer? _debounce;
-  
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
 
@@ -34,35 +38,22 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
   void initState() {
     super.initState();
     _searchController.text = ref.read(itemSearchQueryProvider);
+    // The onChanged property of the TextField is now used directly.
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadBannerAd();
+    if (!_isAdLoaded) {
+      _loadBannerAd();
+    }
   }
 
   void _loadBannerAd() {
-    if (kIsWeb) {
-      return;
-    }
-
-    final isPremium = ref.read(authControllerProvider).isPremium;
-    if (isPremium) {
-      return;
-    }
-
+    if (kIsWeb || ref.read(authControllerProvider).isPremium) return;
     _bannerAd = ref.read(adServiceProvider).createBannerAd(
-      onAdLoaded: () {
-        if (mounted) {
-          setState(() {
-            _isAdLoaded = true;
-          });
-        }
-      },
-      onAdFailedToLoad: (error) {
-        _bannerAd?.dispose();
-      },
+      onAdLoaded: () => setState(() => _isAdLoaded = true),
+      onAdFailedToLoad: (error) => _bannerAd?.dispose(),
     );
   }
 
@@ -76,138 +67,167 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       ref.read(itemSearchQueryProvider.notifier).state = query;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final itemsAsyncValue = ref.watch(itemProvider);
+    final itemsAsyncValue = ref.watch(itemsProvider);
     final categoryFilter = ref.watch(itemCategoryFilterProvider);
+    final searchQuery = ref.watch(itemSearchQueryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Cari barang...',
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
-            fillColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
-            prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  )
-                : null,
-          ),
-          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-          onChanged: _onSearchChanged,
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              categoryFilter == null ? Icons.filter_list_off_outlined : Icons.filter_list,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-            tooltip: 'Filter by Category',
-            onPressed: () => _showFilterDialog(context, ref),
-          ),
-          IconButton(
-            icon: Icon(Icons.sort, color: Theme.of(context).colorScheme.onPrimary),
-            tooltip: 'Sort Items',
-            onPressed: () => _showSortDialog(context, ref),
-          ),
-        ],
-      ),
+      backgroundColor: _neubrutalismBg,
       body: Column(
         children: [
+          _buildHeader(context, categoryFilter),
           Expanded(
             child: itemsAsyncValue.when(
               data: (items) {
-                if (items.isEmpty) {
-                  return const Center(
+                final filteredItems = items.where((item) {
+                  return item.name.toLowerCase().contains(searchQuery.toLowerCase());
+                }).toList();
+
+                if (filteredItems.isEmpty) {
+                  return Center(
                     child: Text(
-                      'Barang tidak ditemukan atau belum ada.',
-                      textAlign: TextAlign.center,
+                      searchQuery.isEmpty ? 'Belum ada barang.' : 'Barang tidak ditemukan.',
                     ),
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(itemProvider);
-                  },
+                  onRefresh: () async => ref.invalidate(itemsProvider),
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12.0,
-                      mainAxisSpacing: 12.0,
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
                       childAspectRatio: 0.75,
                     ),
-                    itemCount: items.length,
+                    itemCount: filteredItems.length,
                     itemBuilder: (context, index) {
-                      final item = items[index];
                       return _ItemCard(
-                        item: item,
+                        item: filteredItems[index],
                         onDelete: (itemToDelete) => _confirmDeleteItem(context, ref, itemToDelete),
                       );
                     },
                   ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator(color: _neubrutalismAccent)),
               error: (error, stack) => Center(child: Text('Error: $error')),
             ),
           ),
           if (_bannerAd != null && _isAdLoaded)
-            Container(
-              alignment: Alignment.center,
-              width: _bannerAd!.size.width.toDouble(),
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
+            SafeArea(
+              top: false,
+              child: Container(
+                alignment: Alignment.center,
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const ItemFormPage(),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, String? categoryFilter) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: NeuContainer(
+                    borderColor: _neubrutalismBorder,
+                    shadowColor: _neubrutalismBorder,
+                    offset: _neubrutalismShadowOffset,
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _onSearchChanged, // Fix: Use onChanged
+                        decoration: InputDecoration(
+                          hintText: 'Cari barang...',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(Icons.search, color: _neubrutalismBorder.withOpacity(0.5)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                NeuIconButton(
+                  buttonColor: Colors.white,
+                  borderColor: _neubrutalismBorder,
+                  shadowColor: _neubrutalismBorder,
+                  enableAnimation: true,
+                  icon: Icon(
+                    categoryFilter == null ? Icons.filter_list_off_outlined : Icons.filter_list,
+                    color: categoryFilter == null ? Colors.grey : _neubrutalismAccent,
+                  ),
+                  onPressed: () => _showFilterDialog(context, ref),
+                ),
+                const SizedBox(width: 8),
+                NeuIconButton(
+                   buttonColor: Colors.white,
+                  borderColor: _neubrutalismBorder,
+                  shadowColor: _neubrutalismBorder,
+                  enableAnimation: true,
+                  icon: const Icon(Icons.sort, color: _neubrutalismBorder),
+                  onPressed: () => _showSortDialog(context, ref),
+                ),
+              ],
             ),
-          );
-        },
-        child: const Icon(Icons.add),
+            const SizedBox(height: 12),
+            NeuTextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ItemFormPage())),
+              enableAnimation: true,
+              buttonColor: _neubrutalismAccent,
+              borderColor: _neubrutalismBorder,
+              shadowColor: _neubrutalismBorder,
+              text: const Text(
+                'Tambah Barang Baru',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-      
+
   void _showSortDialog(BuildContext context, WidgetRef ref) {
     final currentSort = ref.read(itemSortProvider);
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Urutkan Berdasarkan',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const Divider(),
-              ...ItemSortType.values.map((sortType) {
+        return NeuContainer(
+          borderRadius: BorderRadius.circular(12),
+          color: _neubrutalismBg,
+          borderColor: _neubrutalismBorder,
+          shadowColor: _neubrutalismBorder,
+          offset: _neubrutalismShadowOffset,
+          child: AlertDialog(
+            backgroundColor: _neubrutalismBg,
+            elevation: 0,
+            title: const Text('Urutkan Berdasarkan', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ItemSortType.values.map((sortType) {
                 return RadioListTile<ItemSortType>(
-                  title: Text(sortType.label, style: Theme.of(context).textTheme.bodyLarge),
+                  title: Text(sortType.label),
                   value: sortType,
                   groupValue: currentSort,
                   onChanged: (value) {
@@ -216,9 +236,19 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
                     }
                     Navigator.of(context).pop();
                   },
-                  activeColor: Theme.of(context).colorScheme.primary,
+                  activeColor: _neubrutalismAccent,
                 );
-              }),
+              }).toList(),
+            ),
+            actions: [
+              NeuTextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                text: const Text('Tutup'),
+                buttonColor: Colors.white,
+                borderColor: _neubrutalismBorder,
+                shadowColor: _neubrutalismBorder,
+                enableAnimation: true,
+              )
             ],
           ),
         );
@@ -227,57 +257,69 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
   }
       
   void _showFilterDialog(BuildContext context, WidgetRef ref) {
-    final categoriesAsync = ref.watch(categoryProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
     final currentFilter = ref.read(itemCategoryFilterProvider);
   
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Filter Berdasarkan Kategori', style: Theme.of(context).textTheme.titleLarge),
-          content: categoriesAsync.when(
-            data: (categories) {
-              return SizedBox(
-                width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    RadioListTile<String?>(
-                      title: Text('Semua Kategori', style: Theme.of(context).textTheme.bodyLarge),
-                      value: null,
-                      groupValue: currentFilter,
-                      onChanged: (value) {
-                        ref.read(itemCategoryFilterProvider.notifier).state = value;
-                        Navigator.of(context).pop();
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    ...categories.map((cat) {
-                      return RadioListTile<String?>(
-                        title: Text(cat.name, style: Theme.of(context).textTheme.bodyLarge),
-                        value: cat.id,
+        return NeuContainer(
+          borderRadius: BorderRadius.circular(12),
+          color: _neubrutalismBg,
+          borderColor: _neubrutalismBorder,
+          shadowColor: _neubrutalismBorder,
+          offset: _neubrutalismShadowOffset,
+          child: AlertDialog(
+            elevation: 0,
+            backgroundColor: _neubrutalismBg,
+            title: const Text('Filter Kategori', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: categoriesAsync.when(
+              data: (categories) {
+                return SizedBox(
+                  width: double.maxFinite,
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      RadioListTile<String?>(
+                        title: const Text('Semua Kategori'),
+                        value: null,
                         groupValue: currentFilter,
                         onChanged: (value) {
                           ref.read(itemCategoryFilterProvider.notifier).state = value;
                           Navigator.of(context).pop();
                         },
-                        activeColor: Theme.of(context).colorScheme.primary,
-                      );
-                    }),
-                  ],
-                ),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, s) => Text('Gagal memuat kategori: $e', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        activeColor: _neubrutalismAccent,
+                      ),
+                      ...categories.map((cat) {
+                        return RadioListTile<String?>(
+                          title: Text(cat.name),
+                          value: cat.id,
+                          groupValue: currentFilter,
+                          onChanged: (value) {
+                            ref.read(itemCategoryFilterProvider.notifier).state = value;
+                            Navigator.of(context).pop();
+                          },
+                          activeColor: _neubrutalismAccent,
+                        );
+                      }),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Text('Gagal memuat kategori: $e', style: const TextStyle(color: Colors.red)),
+            ),
+            actions: [
+              NeuTextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                text: const Text('Tutup'),
+                buttonColor: Colors.white,
+                borderColor: _neubrutalismBorder,
+                shadowColor: _neubrutalismBorder,
+                enableAnimation: true,
+              )
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Tutup', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-            )
-          ],
         );
       },
     );
@@ -286,49 +328,56 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
   void _confirmDeleteItem(BuildContext context, WidgetRef ref, Item item) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Barang', style: Theme.of(context).textTheme.titleLarge),
-        content: Text('Apakah Anda yakin ingin menghapus barang "${item.name}"?', style: Theme.of(context).textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop(); 
-              try {
-                await ref.read(itemProvider.notifier).deleteItem(item.id);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Barang "${item.name}" berhasil dihapus.'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+      builder: (dialogContext) => NeuContainer(
+        color: _neubrutalismBg,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        borderRadius: BorderRadius.circular(12),
+        child: AlertDialog(
+          elevation: 0,
+          backgroundColor: _neubrutalismBg,
+          title: const Text('Hapus Barang', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text('Anda yakin ingin menghapus "${item.name}"?'),
+          actions: [
+            NeuTextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              text: const Text('Batal'),
+              buttonColor: Colors.white,
+              borderColor: _neubrutalismBorder,
+              shadowColor: _neubrutalismBorder,
+              enableAnimation: true,
+            ),
+            NeuTextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop(); 
+                try {
+                  await ref.read(itemsProvider.notifier).deleteItem(item);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('"${item.name}" berhasil dihapus.'), backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal menghapus: ${e.toString()}'), backgroundColor: Colors.red),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal menghapus: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+              },
+              buttonColor: _neubrutalismAccent,
+              borderColor: _neubrutalismBorder,
+              shadowColor: _neubrutalismBorder,
+              enableAnimation: true,
+              text: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// New Widget for the Grid View Item
 class _ItemCard extends ConsumerWidget {
   const _ItemCard({required this.item, required this.onDelete});
 
@@ -337,43 +386,46 @@ class _ItemCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final imageUrl = item.imageId != null
-        ? ref.read(itemServiceProvider).getImageUrl(item.imageId!)
-        : null;
+    final imageUrl = item.imageId != null ? ref.read(itemServiceProvider).getImageUrl(item.imageId) : null;
     final isLowStock = item.quantity <= item.minQuantity;
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => ItemDetailPage(item: item)),
-      ),
-      child: Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        clipBehavior: Clip.antiAlias, // Important for image border radius
+    return NeuContainer(
+      borderColor: _neubrutalismBorder,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.white,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => ItemDetailPage(item: item)),
+        ),
         child: Stack(
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image Section
                 AspectRatio(
                   aspectRatio: 1.5,
                   child: Container(
-                    color: Colors.grey[200],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
                     child: imageUrl != null
                         ? Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => 
-                              const Center(child: Icon(Icons.broken_image, color: Colors.grey, size: 40)),
-                            loadingBuilder: (context, child, progress) =>
-                              progress == null ? child : const Center(child: CircularProgressIndicator()),
+                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                            loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
                           )
-                        : const Center(child: Icon(Icons.inventory_2_outlined, color: Colors.grey, size: 40)),
+                        : const Icon(Icons.inventory_2_outlined, color: Colors.grey, size: 40),
                   ),
                 ),
-                // Details Section
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Column(
@@ -381,24 +433,21 @@ class _ItemCard extends ConsumerWidget {
                     children: [
                       Text(
                         item.name,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Stok: ${item.quantity} ${item.unit}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         currencyFormatter.format(item.salePrice ?? 0),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: _neubrutalismAccent),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -407,47 +456,76 @@ class _ItemCard extends ConsumerWidget {
                 ),
               ],
             ),
-            // Low Stock Banner
             if (isLowStock)
               Positioned(
                 top: 8,
                 left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade600,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, spreadRadius: 1)],
-                  ),
-                  child: const Text(
-                    'Stok Rendah',
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                child: NeuContainer(
+                  color: _neubrutalismAccent,
+                  borderColor: _neubrutalismBorder,
+                  shadowColor: _neubrutalismBorder,
+                  offset: const Offset(2, 2),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'Stok Rendah',
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),
-            // Popup Menu for Actions
             Positioned(
-              top: 0,
-              right: 0,
-              child: PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: imageUrl != null ? Colors.white : Colors.grey.shade700),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ItemFormPage(item: item)));
-                  } else if (value == 'delete') {
-                    onDelete(item);
-                  }
+              top: 4,
+              right: 4,
+              child: NeuIconButton(
+                buttonColor: Colors.white.withOpacity(0.7),
+                enableAnimation: true,
+                buttonHeight: 40,
+                buttonWidth: 40,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: Colors.transparent,
+                      contentPadding: EdgeInsets.zero,
+                      insetPadding: const EdgeInsets.all(10),
+                      content: NeuContainer(
+                        color: _neubrutalismBg,
+                        borderColor: _neubrutalismBorder,
+                        shadowColor: _neubrutalismBorder,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                             NeuTextButton(
+                                text: const Text('Edit'),
+                                onPressed: (){
+                                  Navigator.of(ctx).pop();
+                                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => ItemFormPage(item: item)));
+                                },
+                                buttonColor: Colors.white,
+                                borderColor: _neubrutalismBorder,
+                                shadowColor: _neubrutalismBorder,
+                                enableAnimation: true,
+                             ),
+                              NeuTextButton(
+                                text: const Text('Hapus', style: TextStyle(color: _neubrutalismAccent)),
+                                onPressed: (){
+                                  Navigator.of(ctx).pop();
+                                  onDelete(item);
+                                },
+                                buttonColor: Colors.white,
+                                borderColor: _neubrutalismBorder,
+                                shadowColor: _neubrutalismBorder,
+                                enableAnimation: true,
+                             ),
+                          ],
+                        ),
+                      ),
+                    )
+                  );
                 },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'edit',
-                    child: ListTile(leading: Icon(Icons.edit), title: Text('Edit')),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'delete',
-                    child: ListTile(leading: Icon(Icons.delete), title: Text('Hapus')),
-                  ),
-                ],
+                icon: const Icon(Icons.more_vert, color: _neubrutalismBorder),
               ),
             ),
           ],

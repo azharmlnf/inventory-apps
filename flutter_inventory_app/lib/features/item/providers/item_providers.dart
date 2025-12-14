@@ -2,7 +2,9 @@ import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
-import 'package:flutter_inventory_app/domain/services/item_service.dart'; // Restore this import
+import 'package:flutter_inventory_app/domain/services/item_service.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
+import 'package:flutter_inventory_app/features/item/providers/item_search_provider.dart';
 import 'package:flutter_inventory_app/main.dart'; // For notificationServiceProvider
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,8 +18,6 @@ final itemServiceProvider = Provider<ItemService>((ref) {
 });
 
 /// AsyncNotifierProvider untuk mengelola daftar item.
-/// Ini akan secara otomatis memuat item saat pertama kali diakses
-/// dan menyediakan cara untuk me-refresh daftar.
 final itemsProvider = AsyncNotifierProvider<ItemsNotifier, List<Item>>(() {
   return ItemsNotifier();
 });
@@ -25,39 +25,38 @@ final itemsProvider = AsyncNotifierProvider<ItemsNotifier, List<Item>>(() {
 class ItemsNotifier extends AsyncNotifier<List<Item>> {
   @override
   Future<List<Item>> build() async {
-    // Load initial items from the service
-    return _fetchItems();
-  }
+    // This build method now correctly watches the filter/sort providers
+    // and will automatically re-run when their states change.
+    final categoryId = ref.watch(itemCategoryFilterProvider);
+    final sortType = ref.watch(itemSortProvider);
 
-  Future<List<Item>> _fetchItems() async {
     final itemService = ref.read(itemServiceProvider);
-    return itemService.getItems();
-  }
-
-  /// Memuat ulang daftar item.
-  Future<void> refreshItems() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchItems());
+    
+    // The search query is now handled on the client-side.
+    return itemService.getItems(
+      categoryId: categoryId,
+      sortType: sortType,
+    );
   }
 
   /// Menambahkan item baru dan memuat ulang daftar.
   Future<void> addItem(Item item) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(itemServiceProvider).createItem(item));
-    state = await AsyncValue.guard(() => _fetchItems());
+    // The service layer handles the actual creation.
+    // We just call it and then invalidate our own provider to trigger a rebuild.
+    await ref.read(itemServiceProvider).createItem(item);
+    ref.invalidate(itemsProvider); // Use the provider itself
   }
 
   /// Memperbarui item dan memuat ulang daftar.
   Future<void> updateItem(Item item) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(itemServiceProvider).updateItem(item));
-    state = await AsyncValue.guard(() => _fetchItems());
+    await ref.read(itemServiceProvider).updateItem(item);
+    ref.invalidate(itemsProvider); // Use the provider itself
   }
 
   /// Menghapus item dan memuat ulang daftar.
-  Future<void> deleteItem(String itemId, String itemName) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(itemServiceProvider).deleteItem(itemId, itemName));
-    state = await AsyncValue.guard(() => _fetchItems());
+  Future<void> deleteItem(Item item) async {
+    // Pass the necessary details to the service layer.
+    await ref.read(itemServiceProvider).deleteItem(item.id, item.name, imageId: item.imageId);
+    ref.invalidate(itemsProvider); // Use the provider itself
   }
 }

@@ -14,14 +14,11 @@ import 'package:flutter_inventory_app/features/category/providers/category_provi
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
 
-
 // Top-level constants for Neubrutalism style used in this page
 const Color _neubrutalismBg = Color(0xFFF9F9F9);
 const Color _neubrutalismText = Colors.black;
 const Color _neubrutalismBorder = Colors.black;
-const double _neubrutalismBorderWidth = 3.0;
 const Offset _neubrutalismShadowOffset = Offset(5.0, 5.0);
-
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -33,7 +30,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _subscription;
-  final String _premiumProductId = 'premium_access'; 
+  // NOTE: This ID is specific to your store configuration (Google Play, App Store)
+  static const String _premiumProductId = 'premium_access'; 
 
   @override
   void initState() {
@@ -56,9 +54,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.purchased) {
         ref.read(authControllerProvider.notifier).updatePremiumStatus(true).then((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Anda sekarang adalah pengguna premium!')),
-          );
+          if (mounted){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Anda sekarang adalah pengguna premium!')),
+            );
+          }
         });
 
         if (purchaseDetails.pendingCompletePurchase) {

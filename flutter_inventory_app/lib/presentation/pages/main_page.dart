@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart';
-import 'package:flutter_inventory_app/presentation/pages/item_form_page.dart';
+import 'package:flutter_inventory_app/features/item/pages/item_form_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/features/home/home_page.dart';
@@ -297,10 +297,7 @@ class _MainPageState extends ConsumerState<MainPage> {
   Widget? _buildFloatingActionButton(BuildContext context) {
     switch (_selectedIndex) {
       case 1: // Barang
-        return FloatingActionButton(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ItemFormPage())),
-          child: const Icon(Icons.add),
-        );
+        return null;
       case 2: // Transaksi
         return FloatingActionButton(
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const TransactionFormPage())),
