@@ -11,6 +11,7 @@ import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/premium_page.dart'; // New import for PremiumPage
+import 'package:flutter_inventory_app/presentation/pages/settings_page.dart';
 
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
@@ -127,7 +128,13 @@ class _MainPageState extends ConsumerState<MainPage> {
                   _buildDrawerItem(
                     icon: Icons.settings,
                     text: 'Pengaturan',
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SettingsPage()),
+                      );
+                    },
                   ),
                   _buildDrawerItem(
                     icon: Icons.workspace_premium,
