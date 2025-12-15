@@ -44,11 +44,11 @@ class ExportService {
     await _shareCsv('items.csv', csv);
   }
 
-  Future<void> exportTransactionsToCsv(List<Transaction> transactions) async {
+  Future<void> exportTransactionsToCsv(List<Transaction> transactions, Map<String, String> itemNames) async {
     final List<List<dynamic>> rows = [];
     rows.add([
       'ID',
-      'Item ID',
+      'Item Name',
       'Type',
       'Quantity',
       'Date',
@@ -57,7 +57,7 @@ class ExportService {
     for (final transaction in transactions) {
       rows.add([
         transaction.id,
-        transaction.itemId,
+        itemNames[transaction.itemId] ?? transaction.itemId,
         transaction.type.name,
         transaction.quantity,
         transaction.date.toIso8601String(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
@@ -7,6 +8,14 @@ import 'package:flutter_inventory_app/features/auth/providers/auth_state_provide
 import 'package:flutter_inventory_app/features/home/providers/dashboard_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:intl/intl.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
+
+const Color _neubrutalismBg = Color(0xFFF9F9F9);
+const Color _neubrutalismAccent = Color(0xFFE84A5F);
+const Color _neubrutalismText = Colors.black;
+const Color _neubrutalismBorder = Colors.black;
+const double _neubrutalismBorderWidth = 3.0;
+const Offset _neubrutalismShadowOffset = Offset(5.0, 5.0);
 
 class ReportPage extends ConsumerStatefulWidget {
   const ReportPage({super.key});
@@ -22,7 +31,6 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   @override
   void initState() {
     super.initState();
-    // _loadBannerAd() is now called in didChangeDependencies
   }
 
   @override
@@ -63,6 +71,17 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     super.dispose();
   }
 
+  Item _getDummyItem() {
+    return Item(
+      id: '',
+      userId: '',
+      name: 'Item Tidak Dikenal',
+      quantity: 0,
+      minQuantity: 0,
+      unit: '',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateRange = ref.watch(dateRangeProvider);
@@ -72,52 +91,85 @@ class _ReportPageState extends ConsumerState<ReportPage> {
     final totalItemsAsync = ref.watch(totalItemsCountProvider);
     final lowStockItemsAsync = ref.watch(lowStockItemsProvider);
     final totalValueAsync = ref.watch(totalStockValueProvider);
+    final allItemsAsync = ref.watch(allItemsProvider);
 
     final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Laporan'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.invalidate(totalItemsCountProvider);
-              ref.invalidate(lowStockItemsProvider);
-              ref.invalidate(totalStockValueProvider);
-              ref.read(dateRangeProvider.notifier).state = (start: null, end: null);
-            },
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              final exportService = ref.read(exportServiceProvider);
-              final allItems = ref.read(allItemsProvider);
-              if (value == 'export_items') {
-                allItems.whenData((items) {
-                  exportService.exportItemsToCsv(items);
-                });
-              } else if (value == 'export_transactions') {
-                filteredTransactions.whenData((transactions) {
-                  exportService.exportTransactionsToCsv(transactions);
-                });
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'export_items',
-                child: Text('Ekspor Item'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'export_transactions',
-                child: Text('Ekspor Transaksi'),
-              ),
-            ],
-          ),
-        ],
-      ),
+      backgroundColor: _neubrutalismBg,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  NeuIconButton(
+                    onPressed: () {
+                      ref.invalidate(totalItemsCountProvider);
+                      ref.invalidate(lowStockItemsProvider);
+                      ref.invalidate(totalStockValueProvider);
+                      ref.read(dateRangeProvider.notifier).state = (start: null, end: null);
+                    },
+                    icon: const Icon(Icons.refresh, color: _neubrutalismText),
+                    buttonColor: Colors.white,
+                    borderColor: _neubrutalismBorder,
+                    shadowColor: _neubrutalismBorder,
+                    enableAnimation: true,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: NeuTextButton(
+                      onPressed: () {
+                        final exportService = ref.read(exportServiceProvider);
+                        final allItems = ref.read(allItemsProvider);
+                        allItems.whenData((items) {
+                          exportService.exportItemsToCsv(items);
+                        });
+                      },
+                      text: const Text(
+                        'Ekspor Item',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      buttonColor: _neubrutalismAccent,
+                      borderColor: _neubrutalismBorder,
+                      shadowColor: _neubrutalismBorder,
+                      enableAnimation: true,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: NeuTextButton(
+                      onPressed: () {
+                        final exportService = ref.read(exportServiceProvider);
+                        final allItems = ref.read(allItemsProvider); // Get all items
+                        filteredTransactions.whenData((transactions) {
+                          allItems.whenData((items) {
+                            final Map<String, String> itemNames = {
+                              for (var item in items) item.id: item.name,
+                            };
+                            exportService.exportTransactionsToCsv(transactions, itemNames);
+                          });
+                        });
+                      },
+                      text: const Text(
+                        'Ekspor Transaksi',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      buttonColor: _neubrutalismAccent,
+                      borderColor: _neubrutalismBorder,
+                      shadowColor: _neubrutalismBorder,
+                      enableAnimation: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           // Summary Section
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -147,11 +199,21 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          NeuContainer(
+            height: 3,
+            color: _neubrutalismBorder,
+            borderRadius: BorderRadius.zero,
+          ),
           // Transaction Filter Section
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text("Filter Transaksi", style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              "Filter Transaksi", 
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _neubrutalismText,
+                  ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -159,18 +221,56 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    onPressed: () => _selectDate(isStartDate: true),
-                    label: Text(dateRange.start == null ? 'Mulai' : DateFormat('dd/MM/yy').format(dateRange.start!)),
+                  child: NeuContainer(
+                    color: Colors.white,
+                    borderColor: _neubrutalismBorder,
+                    shadowColor: _neubrutalismBorder,
+                    offset: _neubrutalismShadowOffset,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () => _selectDate(isStartDate: true),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
+                            SizedBox(width: 8),
+                            Text(
+                              dateRange.start == null ? 'Mulai' : DateFormat('dd/MM/yy').format(dateRange.start!),
+                              style: TextStyle(color: _neubrutalismText),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    onPressed: () => _selectDate(isStartDate: false),
-                    label: Text(dateRange.end == null ? 'Akhir' : DateFormat('dd/MM/yy').format(dateRange.end!)),
+                  child: NeuContainer(
+                    color: Colors.white,
+                    borderColor: _neubrutalismBorder,
+                    shadowColor: _neubrutalismBorder,
+                    offset: _neubrutalismShadowOffset,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () => _selectDate(isStartDate: false),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
+                            SizedBox(width: 8),
+                            Text(
+                              dateRange.end == null ? 'Akhir' : DateFormat('dd/MM/yy').format(dateRange.end!),
+                              style: TextStyle(color: _neubrutalismText),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -188,16 +288,30 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                   return ListView.builder(
                     itemCount: transactions.length,
                     itemBuilder: (context, index) {
-                      final transaction = transactions[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: ListTile(
-                          title: Text('Item ID: ${transaction.itemId}'), // Consider resolving to item name
-                          subtitle: Text('Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}'),
-                          trailing: Text(DateFormat('dd/MM/yyyy').format(transaction.date)),
-                        ),
-                      );
-                    },
+                                                                                            final transaction = transactions[index];
+                                                                                            String itemName = 'Item Tidak Dikenal';
+                                                                                            allItemsAsync.whenData((allItems) {
+                                                                                                                                                                                                  final item = allItems.firstWhere(
+                                                                                                                                                                                                    (item) => item.id == transaction.itemId,
+                                                                                                                                                                                                    orElse: () => _getDummyItem(),
+                                                                                                                                                                                                  );
+                                                                                                                                                                                                  itemName = item.name;                                                                                            });
+                                                                                            return Padding(
+                                                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                                                              child: NeuContainer(
+                                                                                                borderRadius: BorderRadius.circular(12),
+                                                                                                color: Colors.white,
+                                                                                                borderColor: _neubrutalismBorder,
+                                                                                                borderWidth: _neubrutalismBorderWidth,
+                                                                                                shadowColor: _neubrutalismBorder,
+                                                                                                offset: _neubrutalismShadowOffset,
+                                                                                                child: ListTile(
+                                                                                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                                                                  title: Text(itemName, style: const TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold)),                                                  subtitle: Text('Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}', style: TextStyle(color: _neubrutalismText.withAlpha((255 * 0.7).round()))),
+                                                  trailing: Text(DateFormat('dd/MM/yyyy').format(transaction.date), style: const TextStyle(color: _neubrutalismText)),
+                                                ),
+                                              ),
+                                            );                    },
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -235,9 +349,13 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    return NeuContainer(
+      color: Colors.white,
+      borderColor: _neubrutalismBorder,
+      borderWidth: _neubrutalismBorderWidth,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -248,12 +366,12 @@ class _ReportPageState extends ConsumerState<ReportPage> {
             const SizedBox(height: 8),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: _neubrutalismText.withAlpha((255 * 0.7).round())),
               overflow: TextOverflow.ellipsis,
             ),
             Text(
               value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _neubrutalismText),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -263,21 +381,29 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   Widget _buildLoadingCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: const Center(child: CircularProgressIndicator()),
+    return NeuContainer(
+      color: Colors.white,
+      borderColor: _neubrutalismBorder,
+      borderWidth: _neubrutalismBorderWidth,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
+      child: Center(child: CircularProgressIndicator(color: _neubrutalismAccent)),
     );
   }
 
   Widget _buildErrorCard(String message) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    return NeuContainer(
+      color: Colors.white,
+      borderColor: _neubrutalismBorder,
+      borderWidth: _neubrutalismBorderWidth,
+      shadowColor: _neubrutalismBorder,
+      offset: _neubrutalismShadowOffset,
+      borderRadius: BorderRadius.circular(12),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+          child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: _neubrutalismAccent)),
         ),
       ),
     );
