@@ -114,6 +114,46 @@ class _MainPageState extends ConsumerState<MainPage> {
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 children: [
+                  _buildDrawerItem(
+                    icon: Icons.home,
+                    text: _pageTitles[0],
+                    onTap: () {
+                      _onItemTapped(0);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.inventory_2,
+                    text: _pageTitles[1],
+                    onTap: () {
+                      _onItemTapped(1);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.swap_horiz_sharp,
+                    text: _pageTitles[2],
+                    onTap: () {
+                      _onItemTapped(2);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.category,
+                    text: _pageTitles[3],
+                    onTap: () {
+                      _onItemTapped(3);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.assessment,
+                    text: _pageTitles[4],
+                    onTap: () {
+                      _onItemTapped(4);
+                      Navigator.pop(context);
+                    },
+                  ),
                    _buildDrawerItem(
                     icon: Icons.history,
                     text: 'Aktivitas',
@@ -306,10 +346,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       case 1: // Barang
         return null;
       case 2: // Transaksi
-        return FloatingActionButton(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const TransactionFormPage())),
-          child: const Icon(Icons.add),
-        );
+        return null;
       case 3: // Kategori (removed in last working version)
       default:
         return null;

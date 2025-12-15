@@ -8,6 +8,14 @@ import 'package:flutter_inventory_app/features/item/providers/item_providers.dar
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
+import 'package:neubrutalism_ui/neubrutalism_ui.dart';
+
+const Color _neubrutalismBg = Color(0xFFF9F9F9);
+const Color _neubrutalismAccent = Color(0xFFE84A5F);
+const Color _neubrutalismText = Colors.black;
+const Color _neubrutalismBorder = Colors.black;
+const double _neubrutalismBorderWidth = 3.0;
+const Offset _neubrutalismShadowOffset = Offset(5.0, 5.0);
 
 class TransactionFormPage extends ConsumerStatefulWidget {
   final Transaction? transaction;
@@ -199,11 +207,18 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     final itemsAsync = ref.watch(itemsProvider);
 
     return Scaffold(
+      backgroundColor: _neubrutalismBg,
       appBar: AppBar(
-        title: Text(isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi Baru'),
+        title: Text(
+          isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi Baru',
+          style: const TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: _neubrutalismBg,
+        foregroundColor: _neubrutalismText,
+        elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: _neubrutalismAccent))
           : Column(
               children: [
                 Expanded(
@@ -234,9 +249,13 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                           const SizedBox(height: 16),
                           _buildTextField(_noteController, 'Catatan (Opsional)', null, maxLines: 3),
                           const SizedBox(height: 24),
-                          ElevatedButton(
+                          NeuTextButton(
                             onPressed: _submitForm,
-                            child: Text(isEditMode ? 'Simpan Perubahan' : 'Tambah Transaksi'),
+                            buttonColor: _neubrutalismAccent,
+                            borderColor: _neubrutalismBorder,
+                            shadowColor: _neubrutalismBorder,
+                            enableAnimation: true,
+                            text: Text(isEditMode ? 'Simpan Perubahan' : 'Tambah Transaksi', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
                           ),
                         ],
                       ),
@@ -258,18 +277,31 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildTextField(TextEditingController controller, String label, String? validationMsg, {int? maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
+      child: NeuContainer(
+        color: Colors.white,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        offset: _neubrutalismShadowOffset,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: TextFormField(
+            controller: controller,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(color: _neubrutalismText.withOpacity(0.7)),
+              border: InputBorder.none,
+            ),
+            style: const TextStyle(color: _neubrutalismText),
+            validator: (value) {
+              if (validationMsg != null && (value == null || value.isEmpty)) {
+                return validationMsg;
+              }
+              return null;
+            },
+          ),
         ),
-        validator: (value) {
-          if (validationMsg != null && (value == null || value.isEmpty)) {
-            return validationMsg;
-          }
-          return null;
-        },
       ),
     );
   }
@@ -277,22 +309,35 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildNumericField(TextEditingController controller, String label, String validationMsg) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
+      child: NeuContainer(
+        color: Colors.white,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        offset: _neubrutalismShadowOffset,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(color: _neubrutalismText.withOpacity(0.7)),
+              border: InputBorder.none,
+            ),
+            style: const TextStyle(color: _neubrutalismText),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return validationMsg;
+              }
+              if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                return 'Masukkan angka positif valid';
+              }
+              return null;
+            },
+          ),
         ),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return validationMsg;
-          }
-          if (int.tryParse(value) == null || int.parse(value) <= 0) {
-            return 'Masukkan angka positif valid';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -300,29 +345,43 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildItemDropdown(List<Item> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<String>(
-        value: _selectedItemId,
-        decoration: const InputDecoration(
-          labelText: 'Barang',
+      child: NeuContainer(
+        color: Colors.white,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        offset: _neubrutalismShadowOffset,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: DropdownButtonFormField<String>(
+            value: _selectedItemId,
+            decoration: InputDecoration(
+              labelText: 'Barang',
+              labelStyle: TextStyle(color: _neubrutalismText.withOpacity(0.7)),
+              border: InputBorder.none,
+            ),
+            hint: Text('Pilih Barang', style: TextStyle(color: _neubrutalismText.withOpacity(0.7))),
+            style: const TextStyle(color: _neubrutalismText),
+            dropdownColor: Colors.white,
+            items: items.map((Item item) {
+              return DropdownMenuItem<String>(
+                value: item.id,
+                child: Text(item.name, style: const TextStyle(color: _neubrutalismText)),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedItemId = newValue;
+              });
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Mohon pilih barang';
+              }
+              return null;
+            },
+          ),
         ),
-        hint: const Text('Pilih Barang'),
-        items: items.map((Item item) {
-          return DropdownMenuItem<String>(
-            value: item.id,
-            child: Text(item.name),
-          );
-        }).toList(),
-        onChanged: (String? newValue) {
-          setState(() {
-            _selectedItemId = newValue;
-          });
-        },
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Mohon pilih barang';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -330,29 +389,43 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildTransactionTypeDropdown() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField<TransactionType>(
-        value: _selectedType,
-        decoration: const InputDecoration(
-          labelText: 'Tipe Transaksi',
+      child: NeuContainer(
+        color: Colors.white,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        offset: _neubrutalismShadowOffset,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: DropdownButtonFormField<TransactionType>(
+            value: _selectedType,
+            decoration: InputDecoration(
+              labelText: 'Tipe Transaksi',
+              labelStyle: TextStyle(color: _neubrutalismText.withOpacity(0.7)),
+              border: InputBorder.none,
+            ),
+            hint: Text('Pilih Tipe', style: TextStyle(color: _neubrutalismText.withOpacity(0.7))),
+            style: const TextStyle(color: _neubrutalismText),
+            dropdownColor: Colors.white,
+            items: TransactionType.values.map((TransactionType type) {
+              return DropdownMenuItem<TransactionType>(
+                value: type,
+                child: Text(type == TransactionType.inType ? 'Barang Masuk' : 'Barang Keluar', style: const TextStyle(color: _neubrutalismText)),
+              );
+            }).toList(),
+            onChanged: (TransactionType? newValue) {
+              setState(() {
+                _selectedType = newValue;
+              });
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Mohon pilih tipe transaksi';
+              }
+              return null;
+            },
+          ),
         ),
-        hint: const Text('Pilih Tipe'),
-        items: TransactionType.values.map((TransactionType type) {
-          return DropdownMenuItem<TransactionType>(
-            value: type,
-            child: Text(type == TransactionType.inType ? 'Barang Masuk' : 'Barang Keluar'),
-          );
-        }).toList(),
-        onChanged: (TransactionType? newValue) {
-          setState(() {
-            _selectedType = newValue;
-          });
-        },
-        validator: (value) {
-          if (value == null) {
-            return 'Mohon pilih tipe transaksi';
-          }
-          return null;
-        },
       ),
     );
   }
@@ -360,21 +433,34 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildDateField(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: InkWell(
-        onTap: () => _selectDate(context),
-        child: InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'Tanggal Transaksi',
-          ),
-          baseStyle: Theme.of(context).textTheme.bodyLarge,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                '${_selectedTransactionDate.toLocal().day}/${_selectedTransactionDate.toLocal().month}/${_selectedTransactionDate.toLocal().year}',
+      child: NeuContainer(
+        color: Colors.white,
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        offset: _neubrutalismShadowOffset,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: InkWell(
+            onTap: () => _selectDate(context),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Tanggal Transaksi',
+                labelStyle: TextStyle(color: _neubrutalismText.withOpacity(0.7)),
+                border: InputBorder.none,
               ),
-              const Icon(Icons.calendar_today),
-            ],
+              baseStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: _neubrutalismText),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(
+                    '${_selectedTransactionDate.toLocal().day}/${_selectedTransactionDate.toLocal().month}/${_selectedTransactionDate.toLocal().year}',
+                    style: const TextStyle(color: _neubrutalismText),
+                  ),
+                  Icon(Icons.calendar_today, color: _neubrutalismText.withOpacity(0.7)),
+                ],
+              ),
+            ),
           ),
         ),
       ),
