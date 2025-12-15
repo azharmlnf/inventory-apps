@@ -46,9 +46,9 @@
 
 #### Minggu 5: Fitur Grafik Stok & Ekspor Data
 *   **Grafik Stok Barang:**
-    *   [ ] Integrasi `fl_chart` library.
-    *   [ ] Implementasikan logika untuk mengambil dan mengagregasi data stok per kategori dari Appwrite.
-    *   [ ] Buat widget grafik untuk menampilkan visualisasi stok.
+    *   [x] Integrasi `fl_chart` library.
+    *   [x] Implementasikan logika untuk mengambil dan mengagregasi data stok per kategori dari Appwrite.
+    *   [x] Buat widget grafik untuk menampilkan visualisasi stok.
 *   **Ekspor Data:**
     *   [x] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
     *   [x] Integrasi `share_plus` untuk membagikan file ekspor.
