@@ -1,5 +1,5 @@
 
-# Product Requirements Document (PRD) - Inventarisku
+# Product Requirements Document (PRD) - Stoklog
 
 **Versi:** 2.1  
 **Tanggal:** 30 Oktober 2025  
@@ -10,7 +10,7 @@
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini menguraikan persyaratan produk untuk **Aplikasi Manajemen Inventaris "Inventarisku"**, sebuah aplikasi mobile berbasis Flutter yang dirancang untuk membantu individu dan usaha kecil dalam melacak stok barang. Aplikasi ini beroperasi dengan **database online (Appwrite)** untuk memungkinkan **akses multi-perangkat** melalui proses **login**.
+Dokumen ini menguraikan persyaratan produk untuk **Aplikasi Manajemen Inventaris "Stoklog"**, sebuah aplikasi mobile berbasis Flutter yang dirancang untuk membantu individu dan usaha kecil dalam melacak stok barang. Aplikasi ini beroperasi dengan **database online (Appwrite)** untuk memungkinkan **akses multi-perangkat** melalui proses **login**.
 
 ### 1.2 Lingkup Produk
 Lingkup produk mencakup fungsionalitas inti untuk manajemen inventaris yang datanya tersinkronisasi secara online. Aplikasi memerlukan pengguna untuk login untuk mengakses data mereka. Model monetisasi didasarkan pada iklan untuk versi gratis dan opsi berlangganan premium untuk pengalaman bebas iklan.

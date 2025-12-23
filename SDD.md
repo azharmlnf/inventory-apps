@@ -1,5 +1,5 @@
 
-# Software Design Document (SDD) — Inventarisku
+# Software Design Document (SDD) — Stoklog
 
 **Versi:** 2.1  
 **Tanggal:** 30 Oktober 2025  
@@ -10,7 +10,7 @@
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini menjelaskan desain teknis aplikasi **Inventarisku** versi 2.1, yang beralih ke arsitektur online menggunakan **Appwrite** sebagai backend dengan autentikasi email/password. Tujuannya adalah memandu implementasi teknis dari sistem yang tersinkronisasi secara cloud.
+Dokumen ini menjelaskan desain teknis aplikasi **Stoklog** versi 2.1, yang beralih ke arsitektur online menggunakan **Appwrite** sebagai backend dengan autentikasi email/password. Tujuannya adalah memandu implementasi teknis dari sistem yang tersinkronisasi secara cloud.
 
 ### 1.2 Ruang Lingkup
 SDD ini mencakup:
@@ -24,7 +24,7 @@ SDD ini mencakup:
 ## 2. Desain Arsitektur Sistem
 
 ### 2.1 Tinjauan Arsitektur
-Inventarisku versi 2.1 mengadopsi pola **Layered Architecture** yang terhubung ke **Appwrite** sebagai Backend as a Service (BaaS). Arsitektur lokal-sentris (SQLite) sepenuhnya digantikan.
+Stoklog versi 2.1 mengadopsi pola **Layered Architecture** yang terhubung ke **Appwrite** sebagai Backend as a Service (BaaS). Arsitektur lokal-sentris (SQLite) sepenuhnya digantikan.
 1.  **Presentation Layer**: Mengelola UI, state (termasuk status autentikasi), dan input pengguna.
 2.  **Business Logic Layer (Service Layer)**: Berisi logika bisnis yang kini juga menangani logika terkait sesi pengguna.
 3.  **Data Access Layer**: Bertanggung jawab untuk berkomunikasi dengan Appwrite SDK untuk semua kebutuhan data.

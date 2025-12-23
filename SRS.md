@@ -1,4 +1,4 @@
-# Software Requirements Specification (SRS) — Inventarisku
+# Software Requirements Specification (SRS) — Stoklog
 
 **Versi:** 2.1  
 **Tanggal:** 30 Oktober 2025  
@@ -8,10 +8,10 @@
 ## 1. Pendahuluan
 
 ### 1.1 Tujuan
-Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Inventarisku**, sebuah aplikasi manajemen inventaris berbasis Flutter yang terhubung ke backend **Appwrite**. Dokumen ini akan menjadi acuan bagi tim pengembang, desainer, dan stakeholder dalam proses desain, implementasi, dan pengujian.
+Dokumen ini bertujuan untuk menjelaskan spesifikasi perangkat lunak aplikasi **Stoklog**, sebuah aplikasi manajemen inventaris berbasis Flutter yang terhubung ke backend **Appwrite**. Dokumen ini akan menjadi acuan bagi tim pengembang, desainer, dan stakeholder dalam proses desain, implementasi, dan pengujian.
 
 ### 1.2 Ruang Lingkup Produk
-Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi keluar/masuk, serta menyediakan laporan sederhana. Fungsi inti aplikasi bergantung pada koneksi ke server Appwrite untuk semua operasi data (CRUD). Pengguna diwajibkan untuk **login** untuk mengakses data. Model monetisasi adalah freemium, di mana fitur premium satu-satunya adalah **menghilangkan iklan**.
+Stoklog adalah aplikasi mobile online untuk mencatat barang, transaksi keluar/masuk, serta menyediakan laporan sederhana. Fungsi inti aplikasi bergantung pada koneksi ke server Appwrite untuk semua operasi data (CRUD). Pengguna diwajibkan untuk **login** untuk mengakses data. Model monetisasi adalah freemium, di mana fitur premium satu-satunya adalah **menghilangkan iklan**.
 
 ### 1.3 Definisi, Akronim, dan Singkatan
 - **MVP**: Minimum Viable Product
@@ -28,7 +28,7 @@ Inventarisku adalah aplikasi mobile online untuk mencatat barang, transaksi kelu
 ## 2. Deskripsi Umum
 
 ### 2.1 Perspektif Produk
-Inventarisku adalah aplikasi klien yang bergantung pada backend Appwrite. Aplikasi ini berjalan di Android/iOS dan memerlukan koneksi internet untuk fungsionalitas penuh. Semua data disimpan dan dikelola oleh Appwrite.
+Stoklog adalah aplikasi klien yang bergantung pada backend Appwrite. Aplikasi ini berjalan di Android/iOS dan memerlukan koneksi internet untuk fungsionalitas penuh. Semua data disimpan dan dikelola oleh Appwrite.
 
 ### 2.2 Fungsi Produk
 - **Autentikasi Pengguna**: Registrasi dan login melalui email/password.

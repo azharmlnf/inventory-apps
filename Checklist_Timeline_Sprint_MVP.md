@@ -1,4 +1,4 @@
-### Checklist Timeline Pengembangan "Inventarisku" v2.1 (7 Minggu)
+### Checklist Timeline Pengembangan "Stoklog" v2.1 (7 Minggu)
 
 #### Minggu 1: Setup Proyek & Autentikasi
 *   **Setup Backend & Frontend:**
