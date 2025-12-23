@@ -10,7 +10,7 @@ class AdService {
   // Replace these with your actual ad unit IDs before publishing.
   String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111';
+      return 'ca-app-pub-3152010260746803/6677664306';
     } else if (Platform.isIOS) {
       // TODO: Add your iOS banner ad unit ID here
       return 'ca-app-pub-3940256099942544/2934735716';
