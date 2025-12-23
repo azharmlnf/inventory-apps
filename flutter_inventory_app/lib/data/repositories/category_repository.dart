@@ -3,9 +3,9 @@
 
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
-import 'package:flutter_inventory_app/core/app_constants.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 
 
@@ -21,6 +21,8 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
 /// yang terkait dengan koleksi 'categories' di Appwrite.
 class CategoryRepository {
   final Databases _databases;
+  final String _databaseId = dotenv.env['APPWRITE_DATABASE_ID']!;
+  final String _collectionId = dotenv.env['APPWRITE_CATEGORIES_COLLECTION_ID']!;
 
   CategoryRepository(this._databases);
 
@@ -31,8 +33,8 @@ class CategoryRepository {
   }) async {
     try {
       final models.Document document = await _databases.createDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.categoriesCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: ID.unique(),
         data: {
           'userId': userId,
@@ -57,8 +59,8 @@ class CategoryRepository {
   Future<List<Category>> getCategories(String userId) async {
     try {
       final models.DocumentList result = await _databases.listDocuments(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.categoriesCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         // # PENTING: Query untuk memfilter data di sisi server
         // Meskipun izin sudah menjamin keamanan, query ini meningkatkan performa.
         queries: [
@@ -80,8 +82,8 @@ class CategoryRepository {
   }) async {
     try {
       final models.Document document = await _databases.updateDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.categoriesCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: categoryId,
         data: {
           'name': name,
@@ -101,8 +103,8 @@ class CategoryRepository {
   }) async {
     try {
       await _databases.deleteDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.categoriesCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: categoryId,
       );
     } on AppwriteException catch (e) {

@@ -1,7 +1,7 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/core/app_constants.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
@@ -18,14 +18,18 @@ class ItemRepository {
   final Databases _databases;
   final Storage _storage;
 
+  final String _databaseId = dotenv.env['APPWRITE_DATABASE_ID']!;
+  final String _collectionId = dotenv.env['APPWRITE_ITEMS_COLLECTION_ID']!;
+  final String _bucketId = dotenv.env['APPWRITE_ITEM_IMAGES_BUCKET_ID']!;
+
   ItemRepository(this._databases, this._storage);
 
   /// Membuat item baru di database.
   Future<models.Document> createItem(Item item) async {
     try {
       return await _databases.createDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: ID.unique(),
         data: item.toJson(),
         permissions: [
@@ -75,8 +79,8 @@ class ItemRepository {
       }
 
       final result = await _databases.listDocuments(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         queries: queries,
       );
       return result.documents.map((doc) => Item.fromDocument(doc)).toList();
@@ -89,8 +93,8 @@ class ItemRepository {
   Future<models.Document> updateItem(Item item) async {
     try {
       return await _databases.updateDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: item.id,
         data: item.toJson(),
       );
@@ -107,8 +111,8 @@ class ItemRepository {
         await deleteItemImage(imageId);
       }
       await _databases.deleteDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: itemId,
       );
     } on AppwriteException catch (e) {
@@ -122,7 +126,7 @@ class ItemRepository {
   Future<models.File> uploadItemImage(String filePath) async {
     try {
       final file = await _storage.createFile(
-        bucketId: AppConstants.itemImagesBucketId,
+        bucketId: _bucketId,
         fileId: ID.unique(),
         file: InputFile.fromPath(path: filePath),
         permissions: [Permission.read(Role.any())], // Public read access
@@ -136,8 +140,10 @@ class ItemRepository {
   /// Mendapatkan URL publik untuk preview gambar.
   String getItemImageUrl(String fileId) {
     try {
+      final endpoint = dotenv.env['APPWRITE_ENDPOINT']!;
+      final projectId = dotenv.env['APPWRITE_PROJECT_ID']!;
       // Build the URL manually using constants to avoid hardcoding and SDK return type issues.
-      return '${AppConstants.endpoint}/storage/buckets/${AppConstants.itemImagesBucketId}/files/$fileId/view?project=${AppConstants.projectId}';
+      return '$endpoint/storage/buckets/$_bucketId/files/$fileId/view?project=$projectId';
     } catch (e) {
       return '';
     }
@@ -147,7 +153,7 @@ class ItemRepository {
   Future<void> deleteItemImage(String fileId) async {
     try {
       await _storage.deleteFile(
-        bucketId: AppConstants.itemImagesBucketId,
+        bucketId: _bucketId,
         fileId: fileId,
       );
     } on AppwriteException catch (e) {
@@ -162,8 +168,8 @@ class ItemRepository {
   Future<bool> itemExists({required String name, required String userId}) async {
     try {
       final result = await _databases.listDocuments(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         queries: [
           Query.equal('userId', userId),
           Query.equal('name', name),
@@ -182,8 +188,8 @@ class ItemRepository {
   Future<Item> getItemById(String itemId) async {
     try {
       final doc = await _databases.getDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.itemsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: itemId,
       );
       return Item.fromDocument(doc);
@@ -192,3 +198,4 @@ class ItemRepository {
     }
   }
 }
+

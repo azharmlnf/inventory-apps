@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
@@ -13,6 +14,7 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   MobileAds.instance.initialize();
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).init();

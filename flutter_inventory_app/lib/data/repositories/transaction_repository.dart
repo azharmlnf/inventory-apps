@@ -1,7 +1,7 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/core/app_constants.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 
@@ -14,6 +14,8 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
 /// Repository untuk mengelola operasi data terkait 'transactions' di Appwrite.
 class TransactionRepository {
   final Databases _databases;
+  final String _databaseId = dotenv.env['APPWRITE_DATABASE_ID']!;
+  final String _collectionId = dotenv.env['APPWRITE_TRANSACTIONS_COLLECTION_ID']!;
 
   TransactionRepository(this._databases);
 
@@ -21,8 +23,8 @@ class TransactionRepository {
   Future<models.Document> createTransaction(Transaction transaction) async {
     try {
       return await _databases.createDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.transactionsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: ID.unique(),
         data: transaction.toJson(),
         permissions: [
@@ -64,8 +66,8 @@ class TransactionRepository {
       queries.add(Query.orderDesc('date'));
 
       final result = await _databases.listDocuments(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.transactionsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         queries: queries,
       );
       return result.documents.map((doc) => Transaction.fromDocument(doc)).toList();
@@ -78,8 +80,8 @@ class TransactionRepository {
   Future<models.Document> updateTransaction(Transaction transaction) async {
     try {
       return await _databases.updateDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.transactionsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: transaction.id,
         data: transaction.toJson(),
       );
@@ -92,8 +94,8 @@ class TransactionRepository {
   Future<void> deleteTransaction(String transactionId) async {
     try {
       await _databases.deleteDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.transactionsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: transactionId,
       );
     } on AppwriteException catch (e) {
@@ -105,8 +107,8 @@ class TransactionRepository {
   Future<Transaction> getTransactionById(String transactionId) async {
     try {
       final doc = await _databases.getDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.transactionsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: transactionId,
       );
       return Transaction.fromDocument(doc);

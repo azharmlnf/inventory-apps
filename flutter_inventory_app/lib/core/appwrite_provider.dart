@@ -1,10 +1,13 @@
 import 'package:appwrite/appwrite.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final appwriteClientProvider = Provider<Client>((ref) {
+  final endpoint = dotenv.env['APPWRITE_ENDPOINT']!;
+  final projectId = dotenv.env['APPWRITE_PROJECT_ID']!;
   return Client()
-      .setEndpoint('https://sgp.cloud.appwrite.io/v1')
-      .setProject('691431ef001f61d2ee98');
+      .setEndpoint(endpoint)
+      .setProject(projectId);
 });
 
 final appwriteAccountProvider = Provider<Account>((ref) {

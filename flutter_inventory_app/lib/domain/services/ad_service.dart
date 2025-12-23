@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:io';
@@ -6,14 +7,11 @@ import 'dart:io';
 final adServiceProvider = Provider((ref) => AdService());
 
 class AdService {
-  // Use test IDs to avoid policy violations during development.
-  // Replace these with your actual ad unit IDs before publishing.
   String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3152010260746803/6677664306';
+      return dotenv.env['ADMOB_BANNER_ID_ANDROID']!;
     } else if (Platform.isIOS) {
-      // TODO: Add your iOS banner ad unit ID here
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return dotenv.env['ADMOB_BANNER_ID_IOS']!;
     } else {
       throw UnsupportedError('Unsupported platform');
     }
@@ -21,10 +19,9 @@ class AdService {
 
   String get interstitialAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712';
+      return dotenv.env['ADMOB_INTERSTITIAL_ID_ANDROID']!;
     } else if (Platform.isIOS) {
-      // TODO: Add your iOS interstitial ad unit ID here
-      return 'ca-app-pub-3940256099942544/4411468910';
+      return dotenv.env['ADMOB_INTERSTITIAL_ID_IOS']!;
     } else {
       throw UnsupportedError('Unsupported platform');
     }
@@ -72,3 +69,4 @@ class AdService {
     );
   }
 }
+

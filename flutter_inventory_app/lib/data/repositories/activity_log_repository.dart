@@ -1,5 +1,5 @@
 import 'package:appwrite/appwrite.dart';
-import 'package:flutter_inventory_app/core/app_constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/activity_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +11,8 @@ final activityLogRepositoryProvider = Provider<ActivityLogRepository>((ref) {
 
 class ActivityLogRepository {
   final Databases _databases;
+  final String _databaseId = dotenv.env['APPWRITE_DATABASE_ID']!;
+  final String _collectionId = dotenv.env['APPWRITE_ACTIVITY_LOGS_COLLECTION_ID']!;
 
   ActivityLogRepository(this._databases);
 
@@ -28,8 +30,8 @@ class ActivityLogRepository {
       );
 
       await _databases.createDocument(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.activityLogsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         documentId: ID.unique(),
         data: log.toMap(),
         permissions: [
@@ -47,8 +49,8 @@ class ActivityLogRepository {
   Future<List<ActivityLog>> getActivityLogs(String userId) async {
     try {
       final response = await _databases.listDocuments(
-        databaseId: AppConstants.databaseId,
-        collectionId: AppConstants.activityLogsCollectionId,
+        databaseId: _databaseId,
+        collectionId: _collectionId,
         queries: [
           Query.equal('userId', userId),
           Query.orderDesc('timestamp'), // Show newest first
