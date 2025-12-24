@@ -1,0 +1,37 @@
+# Rencana Implementasi Pembayaran Aplikasi Stoklog (Update Terakhir: 24 Des 2025)
+
+---
+
+### 1. TUJUAN UTAMA
+Mengimplementasikan fitur premium "Bebas Iklan" menggunakan model **Langganan (Subscription)** dengan pilihan **Bulanan** dan **Tahunan**.
+
+---
+
+### 2. RANGKUMAN PROSES
+
+*   **FASE 1: Penyiapan Produk di Google Play Console (Tugas Anda/Pemilik Akun)**
+    *   Membuat 1 Produk Langganan (`Subscription`) dengan ID `premium_bebas_iklan`.
+    *   Menambahkan 2 Paket Dasar (`Base Plans`) ke dalamnya:
+        *   Paket Bulanan (1 Bulan) dengan ID `premium-monthly`.
+        *   Paket Tahunan (1 Tahun) dengan ID `premium-yearly`.
+    *   Menambahkan Email Anda ke "License Testing" untuk tes pembayaran gratis.
+
+*   **FASE 2: Penyiapan Backend di Google Cloud & Appwrite (Ditunda sementara)**
+    *   *Penyiapan verifikasi langganan di backend akan dikerjakan nanti atas permintaan user. Saat ini akan menggunakan validasi lokal di aplikasi.*
+
+*   **FASE 3: Implementasi di Aplikasi Flutter (Tugas Saya)**
+    *   Mengintegrasikan alur pembelian langganan.
+    *   Menampilkan UI untuk memilih paket langganan (Bulanan/Tahunan).
+    *   Menyembunyikan iklan jika status langganan pengguna aktif.
+
+---
+
+### 3. STATUS SAAT INI
+Kita akan memulai **FASE 3**. FASE 2 ditunda sementara.
+
+---
+
+### 4. LANGKAH SELANJUTNYA
+Saat kita melanjutkan, Anda akan saya pandu untuk:
+*   Mengintegrasikan library pembelian dalam aplikasi di aplikasi Flutter Anda.
+*   Setelah itu, kita akan melanjutkan implementasi alur pembelian di aplikasi.

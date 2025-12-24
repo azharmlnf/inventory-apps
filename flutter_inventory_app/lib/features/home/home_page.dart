@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:intl/intl.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -13,6 +11,7 @@ import 'package:flutter_inventory_app/features/item/providers/item_providers.dar
 import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
+import 'package:flutter_inventory_app/features/subscription/pages/subscription_page.dart'; // Import SubscriptionPage
 
 // Top-level constants for Neubrutalism style used in this page
 const Color _neubrutalismBg = Color(0xFFF9F9F9);
@@ -28,55 +27,16 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
-  // NOTE: This ID is specific to your store configuration (Google Play, App Store)
-  static const String _premiumProductId = 'premium_access'; 
 
   @override
   void initState() {
     super.initState();
-    final Stream<List<PurchaseDetails>> purchaseUpdated = _inAppPurchase.purchaseStream;
-    _subscription = purchaseUpdated.listen((purchaseDetailsList) {
-      _listenToPurchaseUpdated(purchaseDetailsList);
-    }, onDone: () {
-      _subscription.cancel();
-    }, onError: (error) {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error In-App Purchase: ${error.toString()}')),
-        );
-      }
-    });
-  }
-
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    for (var purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.purchased) {
-        ref.read(authControllerProvider.notifier).updatePremiumStatus(true).then((_) {
-          if (mounted){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Anda sekarang adalah pengguna premium!')),
-            );
-          }
-        });
-
-        if (purchaseDetails.pendingCompletePurchase) {
-          _inAppPurchase.completePurchase(purchaseDetails);
-        }
-      } else if (purchaseDetails.status == PurchaseStatus.error) {
-        if(mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Terjadi error pada pembelian: ${purchaseDetails.error?.message}')),
-          );
-        }
-      }
-    }
+    // initState is kept for potential future use, but IAP logic is removed.
   }
 
   @override
   void dispose() {
-    _subscription.cancel();
+    // dispose is kept for potential future use, but IAP logic is removed.
     super.dispose();
   }
 
@@ -105,6 +65,38 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Premium Button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.yellow.shade300,
+                  foregroundColor: _neubrutalismText,
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: _neubrutalismBorder, width: 2),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const SubscriptionPage()),
+                  );
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star),
+                    SizedBox(width: 8),
+                    Text(
+                      'Upgrade ke Premium',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
               // Summary Cards
               GridView.count(
                 shrinkWrap: true,

@@ -7,6 +7,7 @@ import 'package:flutter_inventory_app/features/home/home_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/main_page.dart';
 import 'package:flutter_inventory_app/domain/services/notification_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart'; // Add this import
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
@@ -18,6 +19,7 @@ Future<void> main() async {
   MobileAds.instance.initialize();
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).init();
+  await container.read(inAppPurchaseServiceProvider).initialize(); // Initialize InAppPurchaseService
   runApp(UncontrolledProviderScope(
     container: container,
     child: const MyApp(),
