@@ -31,7 +31,3 @@ final appwriteFunctionProvider = Provider<Functions>((ref) {
   return Functions(client);
 });
 
-// Add InAppPurchaseService Provider
-final inAppPurchaseServiceProvider = Provider<InAppPurchaseService>((ref) {
-  return InAppPurchaseService();
-});

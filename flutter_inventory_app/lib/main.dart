@@ -3,11 +3,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
 import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
-import 'package:flutter_inventory_app/features/home/home_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/main_page.dart';
 import 'package:flutter_inventory_app/domain/services/notification_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart'; // Add this import
+import 'package:flutter_inventory_app/providers/in_app_purchase_provider.dart';
+import 'package:flutter_inventory_app/services/in_app_purchase_service.dart';
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
@@ -16,10 +16,10 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).init();
-  await container.read(inAppPurchaseServiceProvider).initialize(); // Initialize InAppPurchaseService
+  await container.read(inAppPurchaseProvider).initialize();
   runApp(UncontrolledProviderScope(
     container: container,
     child: const MyApp(),

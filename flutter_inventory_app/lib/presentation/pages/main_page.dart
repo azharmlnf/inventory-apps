@@ -10,7 +10,7 @@ import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart
 import 'package:flutter_inventory_app/presentation/pages/item_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
-import 'package:flutter_inventory_app/presentation/pages/premium_page.dart'; // New import for PremiumPage
+import 'package:flutter_inventory_app/features/subscription/pages/subscription_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/settings_page.dart';
 
 class MainPage extends ConsumerStatefulWidget {
@@ -186,7 +186,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                       if (!isPremium) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const PremiumPage()),
+                          MaterialPageRoute(builder: (context) => const SubscriptionPage()),
                         );
                       }
                     },

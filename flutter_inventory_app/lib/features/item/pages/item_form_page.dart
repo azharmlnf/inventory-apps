@@ -270,9 +270,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     _buildTextField(_unitController, 'Unit (e.g., Pcs, Box)', 'Unit tidak boleh kosong'),
                     Row(
                       children: [
-                        Expanded(child: _buildNumericField(_quantityController, 'Kuantitas')),
+                        Expanded(child: _buildNumericField(_quantityController, 'Kuantitas (jumlah stok saat ini)')),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Stok Rendah')),
+                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Stok Rendah (untuk notifikasi)')),
                       ],
                     ),
                     Row(

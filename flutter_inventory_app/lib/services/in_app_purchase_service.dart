@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 
+// Service is now a standard class, managed by Riverpod
 class InAppPurchaseService extends ChangeNotifier {
-  InAppPurchaseService._internal(); // Private constructor
-  static final InAppPurchaseService _instance = InAppPurchaseService._internal();
+  final Ref _ref; // To interact with other providers
 
-  factory InAppPurchaseService() {
-    return _instance;
-  }
+  InAppPurchaseService(this._ref); // Constructor accepts a Ref
 
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _purchaseStreamSubscription;
@@ -25,32 +25,27 @@ class InAppPurchaseService extends ChangeNotifier {
   Future<void> initialize() async {
     _isAvailable = await _inAppPurchase.isAvailable();
     if (!_isAvailable) {
-      // Handle cases where in-app purchases are not available (e.g., on web or unsupported devices)
       print('In-app purchases not available on this device/platform.');
       return;
     }
 
-    final Stream<List<PurchaseDetails>> purchaseUpdated = _inAppPurchase.purchaseStream;
+    final Stream<List<PurchaseDetails>> purchaseUpdated =
+        _inAppPurchase.purchaseStream;
     _purchaseStreamSubscription = purchaseUpdated.listen(
-      (purchaseDetailsList) {
-        _listenToPurchaseUpdated(purchaseDetailsList);
-      },
-      onDone: () {
-        _purchaseStreamSubscription.cancel();
-      },
+      (purchaseDetailsList) => _listenToPurchaseUpdated(purchaseDetailsList),
+      onDone: () => _purchaseStreamSubscription.cancel(),
       onError: (error) {
-        // Handle error here
         print('Error in purchase stream: $error');
         _purchasePendingError = 'Terjadi kesalahan saat memproses pembelian.';
         notifyListeners();
       },
     );
 
-    // Fetch products as soon as service is initialized
-    await _queryProductDetails();
+    await queryProductDetails();
   }
 
-  void disposeService() {
+  @override
+  void dispose() {
     _purchaseStreamSubscription.cancel();
     super.dispose();
   }
@@ -58,84 +53,85 @@ class InAppPurchaseService extends ChangeNotifier {
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
-        _handlePending(purchaseDetails);
-      } else {
-        if (purchaseDetails.status == PurchaseStatus.error) {
-          _handleError(purchaseDetails);
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                     purchaseDetails.status == PurchaseStatus.restored) {
-          _handlePurchased(purchaseDetails);
-        }
+        _handlePending();
+      } else if (purchaseDetails.status == PurchaseStatus.error) {
+        _handleError(purchaseDetails);
+      } else if (purchaseDetails.status == PurchaseStatus.purchased ||
+          purchaseDetails.status == PurchaseStatus.restored) {
+        _handlePurchased(purchaseDetails);
       }
     }
     notifyListeners();
   }
 
-  void _handlePending(PurchaseDetails purchaseDetails) {
-    _purchasePendingError = null; // Clear any previous errors
-    print('Purchase pending: ${purchaseDetails.productID}');
-    // You might want to show a loading indicator or similar UI
+  void _handlePending() {
+    _purchasePendingError = null;
+    print('Purchase pending...');
     notifyListeners();
   }
 
   void _handleError(PurchaseDetails purchaseDetails) {
     print('Purchase error: ${purchaseDetails.error?.message}');
-    _purchasePendingError = purchaseDetails.error?.message ?? 'Pembelian gagal.';
+    _purchasePendingError =
+        purchaseDetails.error?.message ?? 'Pembelian gagal.';
     notifyListeners();
   }
 
   Future<void> _handlePurchased(PurchaseDetails purchaseDetails) async {
-    _purchasePendingError = null; // Clear any previous errors
-    print('Purchase successful: ${purchaseDetails.productID}');
+    _purchasePendingError = null;
+    print('Purchase successful or restored: ${purchaseDetails.productID}');
 
     // Acknowledge the purchase (crucial step!)
     if (purchaseDetails.pendingCompletePurchase) {
       await _inAppPurchase.completePurchase(purchaseDetails);
     }
 
-    // --- VALIDASI LOKAL (sementara, sesuai permintaan Anda) ---
-    // Di sini Anda akan mengaktifkan fitur bebas iklan secara lokal.
-    // Untuk produksi, ini adalah tempat di mana Anda akan mengirim
-    // purchaseDetails.verificationData.serverVerificationData ke backend (FASE 2)
-    // untuk validasi server yang aman dan mengaktifkan fitur dari sana.
-    // Untuk sekarang, kita asumsikan valid jika sudah acknowledged.
+    // Update the user's premium status via AuthController
+    try {
+      await _ref.read(authControllerProvider.notifier).updatePremiumStatus(true);
+      print('User premium status updated successfully via provider.');
+    } catch (e) {
+      print('Error updating premium status via provider: $e');
+    }
 
-    // Simpan status langganan secara lokal (misal: menggunakan shared_preferences)
-    // atau update UI yang relevan.
-    // Contoh:
-    // isPremium = true;
-    // notifyListeners();
+    notifyListeners();
   }
 
-  Future<void> _queryProductDetails() async {
-    // Daftar ID produk langganan yang sudah Anda buat di Google Play Console
-    // Sesuaikan dengan Product ID langganan induk Anda
-    const Set<String> productIds = {'premium_no_ads'}; // Gunakan ID produk langganan Anda
+  Future<void> queryProductDetails() async {
+    // FIX: Use the correct subscription product IDs
+    const Set<String> productIds = {'premium_no_ads'};
 
     final ProductDetailsResponse response =
         await _inAppPurchase.queryProductDetails(productIds);
 
     if (response.error != null) {
       print('Error querying product details: ${response.error?.message}');
+      _products = [];
+      notifyListeners();
       return;
     }
 
-    if (response.productDetails.isNotEmpty) {
-      _products = response.productDetails;
-      print('Fetched products: ${_products.map((p) => p.id).join(', ')}');
-    } else {
-      print('No products found for IDs: $productIds');
+    if (response.notFoundIDs.isNotEmpty) {
+      print(
+          'Warning: The following product IDs were not found: ${response.notFoundIDs}');
+    }
+
+    _products = response.productDetails;
+    print('Fetched products: ${_products.map((p) => p.id).join(', ')}');
+
+    if (_products.isEmpty) {
+      print(
+          'No products found. Make sure IDs are correct and set up in Play Console.');
     }
     notifyListeners();
   }
 
-  // Metode untuk memulai pembelian
   Future<void> buySubscription(ProductDetails productDetails) async {
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+    final PurchaseParam purchaseParam =
+        PurchaseParam(productDetails: productDetails);
     await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
-  // Metode untuk memulihkan pembelian sebelumnya (penting untuk langganan)
   Future<void> restorePurchases() async {
     print('Restoring purchases...');
     await _inAppPurchase.restorePurchases();
