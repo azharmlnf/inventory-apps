@@ -74,7 +74,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24.0),
                   child: Text(
-                    'STOKLOG',
+                    'Stoklog Login',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

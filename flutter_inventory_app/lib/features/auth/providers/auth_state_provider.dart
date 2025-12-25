@@ -14,14 +14,14 @@ class AuthState {
   final models.User? user;
   final String? errorMessage;
   final bool isPremium;
-  final String? activeSubscriptionId; // Added this field
+  final String? activeSubscriptionId;
 
   AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.errorMessage,
     this.isPremium = false,
-    this.activeSubscriptionId, // Added to constructor
+    this.activeSubscriptionId,
   });
 
   AuthState copyWith({
@@ -29,7 +29,7 @@ class AuthState {
     models.User? user,
     String? errorMessage,
     bool? isPremium,
-    String? activeSubscriptionId, // Added to copyWith
+    String? activeSubscriptionId,
   }) {
     final bool shouldClear = status == AuthStatus.unauthenticated;
     return AuthState(
@@ -37,7 +37,6 @@ class AuthState {
       user: shouldClear ? null : user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
       isPremium: shouldClear ? false : isPremium ?? this.isPremium,
-      // Clear on logout, otherwise update
       activeSubscriptionId: shouldClear ? null : activeSubscriptionId ?? this.activeSubscriptionId,
     );
   }
@@ -54,8 +53,10 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _updateUserAndPremiumStatus() async {
     final user = await _authRepository.getCurrentUser();
     if (user != null) {
-      // Read isPremium and activeSubscriptionId from user preferences
-      final isPremiumFromPrefs = user.prefs.data['isPremium'] ?? false;
+      // FIX: Safely handle isPremium value which might not be a bool.
+      final dynamic premiumValue = user.prefs.data['isPremium'];
+      final bool isPremiumFromPrefs = (premiumValue is bool) ? premiumValue : (premiumValue.toString() == 'true');
+      
       final subscriptionIdFromPrefs = user.prefs.data['activeSubscriptionId'];
 
       state = state.copyWith(
@@ -88,6 +89,14 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> signIn(String email, String password) async {
     try {
+      // FIX: Forcibly sign out to clear any lingering active session before logging in.
+      try {
+        await _authRepository.signOut();
+      } catch (e) {
+        // Ignore errors, as there might not be a session to clear.
+        debugPrint("Ignoring error during pre-login sign-out: $e");
+      }
+      
       await _authRepository.signIn(email: email, password: password);
       await _updateUserAndPremiumStatus();
     } catch (e) {
@@ -122,7 +131,6 @@ class AuthController extends Notifier<AuthState> {
   Future<void> updatePremiumStatus(bool isPremium, {String? productId}) async {
     try {
       await _authRepository.updatePremiumStatus(isPremium, productId);
-      // Also update the local state immediately
       state = state.copyWith(isPremium: isPremium, activeSubscriptionId: productId);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());

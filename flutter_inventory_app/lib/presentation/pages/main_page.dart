@@ -12,6 +12,7 @@ import 'package:flutter_inventory_app/presentation/pages/report_page.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_list_page.dart';
 import 'package:flutter_inventory_app/features/subscription/pages/subscription_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/settings_page.dart';
+import 'package:upgrader/upgrader.dart';
 
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
@@ -215,11 +216,13 @@ class _MainPageState extends ConsumerState<MainPage> {
           ],
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: _widgetOptions,
+      body: UpgradeAlert(
+        child: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: _widgetOptions,
+          ),
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(context),
