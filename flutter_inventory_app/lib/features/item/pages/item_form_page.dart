@@ -54,7 +54,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _barcodeController = TextEditingController(text: item?.barcode ?? '');
     _brandController = TextEditingController(text: item?.brand ?? '');
     _descriptionController = TextEditingController(text: item?.description ?? '');
-    _quantityController = TextEditingController(text: item?.quantity.toString() ?? '0');
+    _quantityController = TextEditingController(text: item?.quantity.toString() ?? '1');
     _minQuantityController = TextEditingController(text: item?.minQuantity.toString() ?? '10');
     _unitController = TextEditingController(text: item?.unit ?? 'Pcs');
     _purchasePriceController = TextEditingController(text: item?.purchasePrice?.toStringAsFixed(0) ?? '');
@@ -263,16 +263,16 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                   children: [
                     _buildImagePicker(),
                     const SizedBox(height: 24),
-                    _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
-                    _buildTextField(_barcodeController, 'Barcode (Opsional)', null),
-                    _buildTextField(_brandController, 'Merek (Opsional)', null),
-                    _buildTextField(_descriptionController, 'Deskripsi (Opsional)', null, maxLines: 3),
-                    _buildTextField(_unitController, 'Unit (e.g., Pcs, Box)', 'Unit tidak boleh kosong'),
+                    _buildTextField(_nameController, 'Nama Barang (Misal: Kopi Robusta)', 'Nama tidak boleh kosong'),
+                    _buildTextField(_barcodeController, 'Barcode (Opsional, bisa di-scan)', null),
+                    _buildTextField(_brandController, 'Merek (Opsional, misal: Kapal Api)', null),
+                    _buildTextField(_descriptionController, 'Deskripsi/Catatan (Opsional)', null, maxLines: 3),
+                    _buildTextField(_unitController, 'Unit Satuan (Misal: Pcs, Box, Kg)', 'Unit tidak boleh kosong'),
                     Row(
                       children: [
-                        Expanded(child: _buildNumericField(_quantityController, 'Kuantitas (jumlah stok saat ini)')),
+                        Expanded(child: _buildNumericField(_quantityController, 'Jumlah Stok Awal')),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Stok Rendah (untuk notifikasi)')),
+                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Stok Rendah')),
                       ],
                     ),
                     Row(
