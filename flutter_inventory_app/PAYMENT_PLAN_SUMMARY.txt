@@ -1,37 +1,49 @@
-# Rencana Implementasi Pembayaran Aplikasi Stoklog (Update Terakhir: 24 Des 2025)
+# Dokumentasi Implementasi Pembayaran Aplikasi Stoklog (Update Terakhir: 24 Des 2025)
 
 ---
 
-### 1. TUJUAN UTAMA
-Mengimplementasikan fitur premium "Bebas Iklan" menggunakan model **Langganan (Subscription)** dengan pilihan **Bulanan** dan **Tahunan**.
+### 1. RINGKASAN FITUR
+Fitur premium **"Bebas Iklan"** telah diimplementasikan menggunakan model **Langganan (Subscription)** melalui Google Play.
 
 ---
 
-### 2. RANGKUMAN PROSES
+### 2. KONFIGURASI DI GOOGLE PLAY CONSOLE
 
-*   **FASE 1: Penyiapan Produk di Google Play Console (Tugas Anda/Pemilik Akun)**
-    *   Membuat 1 Produk Langganan (`Subscription`) dengan ID `premium_bebas_iklan`.
-    *   Menambahkan 2 Paket Dasar (`Base Plans`) ke dalamnya:
-        *   Paket Bulanan (1 Bulan) dengan ID `premium-monthly`.
-        *   Paket Tahunan (1 Tahun) dengan ID `premium-yearly`.
-    *   Menambahkan Email Anda ke "License Testing" untuk tes pembayaran gratis.
+Struktur produk langganan yang digunakan adalah **1 Produk Utama** dengan **2 Paket Dasar**.
 
-*   **FASE 2: Penyiapan Backend di Google Cloud & Appwrite (Ditunda sementara)**
-    *   *Penyiapan verifikasi langganan di backend akan dikerjakan nanti atas permintaan user. Saat ini akan menggunakan validasi lokal di aplikasi.*
+*   **ID Produk Langganan (Product ID):** `premium_no_ads`
+    *   *Ini adalah ID utama yang dipanggil oleh kode aplikasi untuk mendapatkan detail langganan.*
 
-*   **FASE 3: Implementasi di Aplikasi Flutter (Tugas Saya)**
-    *   Mengintegrasikan alur pembelian langganan.
-    *   Menampilkan UI untuk memilih paket langganan (Bulanan/Tahunan).
-    *   Menyembunyikan iklan jika status langganan pengguna aktif.
+*   **ID Paket Dasar (Base Plan IDs):**
+    1.  `premium-monthly` (untuk langganan bulanan).
+    2.  `premium-yearly` (untuk langganan tahunan).
+
+**Penting:** Aplikasi memanggil Product ID (`premium_no_ads`), kemudian Google Play akan menampilkan opsi pembelian berdasarkan Base Plan ID (`premium-monthly` dan `premium-yearly`) yang aktif di dalamnya.
 
 ---
 
-### 3. STATUS SAAT INI
-Kita akan memulai **FASE 3**. FASE 2 ditunda sementara.
+### 3. ALUR LOGIKA DI APLIKASI FLUTTER
+
+*   **Inisialisasi Saat Startup:** Saat aplikasi pertama kali dijalankan, aplikasi secara otomatis menginisialisasi layanan pembelian dan memeriksa status langganan yang aktif di akun Google pada perangkat.
+
+*   **Sinkronisasi Status Premium:**
+    *   Status premium terikat pada **akun Google di perangkat**, bukan pada akun pengguna aplikasi (Stoklog).
+    *   Jika sebuah akun Google di perangkat terdeteksi memiliki langganan aktif, **semua pengguna aplikasi Stoklog** di perangkat tersebut akan mendapatkan akses premium secara otomatis.
+    *   Logika ini mengatasi masalah "Item Already Owned" dan memastikan status premium tersinkronisasi dengan benar saat berganti akun aplikasi.
+
+*   **Halaman Langganan (`SubscriptionPage`):**
+    *   Jika pengguna **belum premium**, halaman akan menampilkan pilihan paket (Bulanan/Tahunan) untuk dibeli.
+    *   Jika pengguna **sudah premium**, halaman akan menampilkan halaman status yang mengonfirmasi bahwa mereka adalah anggota premium. Tombol di drawer akan selalu mengarah ke halaman ini.
+
+*   **Logika Saat Logout:**
+    *   Saat pengguna melakukan `logout`, semua data spesifik pengguna (seperti daftar barang, kategori, transaksi) akan **dibersihkan dari cache aplikasi**.
+    *   Ini memastikan pengguna baru yang login akan melihat data yang bersih dan sesuai dengan akunnya, tanpa tercampur data dari pengguna sebelumnya.
 
 ---
 
-### 4. LANGKAH SELANJUTNYA
-Saat kita melanjutkan, Anda akan saya pandu untuk:
-*   Mengintegrasikan library pembelian dalam aplikasi di aplikasi Flutter Anda.
-*   Setelah itu, kita akan melanjutkan implementasi alur pembelian di aplikasi.
+### 4. PANDUAN PENGUJIAN
+
+Untuk melakukan pengujian pembayaran atau verifikasi status premium:
+
+1.  Pastikan akun Google yang digunakan di perangkat Android Anda telah ditambahkan sebagai **"License Tester"** di pengaturan Google Play Console.
+2.  **Instal aplikasi melalui link tester dari Play Store**, bukan menginstalnya secara manual atau melalui perintah `flutter run`. Ini adalah syarat agar aplikasi dapat berkomunikasi dengan layanan pembayaran Google Play.

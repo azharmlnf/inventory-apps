@@ -53,52 +53,33 @@
     *   [x] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
     *   [x] Integrasi `share_plus` untuk membagikan file ekspor.
 
-#### Minggu 6: Implementasi Monetisasi via Google Play Billing
+#### Minggu 6: Implementasi Monetisasi via Google Play Billing (Validasi Sisi Klien)
 
-> **Catatan:** Implementasi ini menggantikan metode pembayaran eksternal (seperti Stripe) dan mengikuti kebijakan Google Play Store untuk pembelian item digital. Arsitektur ini menggunakan validasi sisi server (server-side validation) untuk keamanan.
+> **Catatan:** Implementasi ini menggunakan model langganan (subscription) sesuai kebijakan Google Play Store. Arsitektur saat ini menggunakan validasi di sisi klien (client-side) untuk kemudahan implementasi. Verifikasi di sisi server bisa ditambahkan di masa depan.
 
-*   **Langkah 1: Konfigurasi di Google Play Console & Google Cloud Console**
-    *   [ ] **Play Console:** Buat aplikasi Anda di [Google Play Console](https://play.google.com/console).
-    *   [ ] **Play Console:** Di bawah menu "Monetize", temukan **License testing** dan tambahkan email penguji. Penguji ini dapat membeli item tanpa dikenakan biaya.
-    *   [ ] **Play Console:** Di bawah menu "Monetize", buka **In-app products** dan buat produk baru (tipe: "One-time product").
-        *   [ ] Beri **Product ID** yang unik (mis: `premium_upgrade_v1`). ID ini akan digunakan di kode Flutter.
-        *   [ ] Isi detail produk (nama, deskripsi, harga) dan aktifkan.
-    *   [ ] **Google Cloud Console:** Tautkan proyek Google Cloud Anda dengan akun Play Console (Play Console > Setup > API Access).
-    *   [ ] **Google Cloud Console:** Aktifkan **Google Play Developer API**.
-    *   [ ] **Google Cloud Console:** Buat **Service Account**. Beri peran "Service Account User". Buat JSON key untuk service account ini dan unduh filenya. Konten dari file JSON ini akan digunakan sebagai *environment variable* di Appwrite Function.
+*   **Langkah 1: Konfigurasi di Google Play Console**
+    *   [x] **Play Console:** Buat aplikasi Anda di [Google Play Console](https://play.google.com/console).
+    *   [x] **Play Console:** Di bawah menu "Monetize", temukan **License testing** dan tambahkan email penguji.
+    *   [x] **Play Console:** Di bawah menu "Monetize", buka **Subscriptions** dan buat produk langganan baru.
+        *   [x] Beri **Product ID** yang unik (ID yang digunakan: `premium_no_ads`).
+        *   [x] Tambahkan **Base Plans** untuk siklus penagihan (ID yang digunakan: `premium-monthly`, `premium-yearly`).
+        *   [x] Isi detail produk (nama, deskripsi, harga) dan aktifkan.
 
-*   **Langkah 2: Backend dengan Appwrite Function (`verify-google-play-purchase`)**
-    *   [ ] Buat Appwrite Function baru (Node.js atau Dart).
-    *   [ ] Tambahkan *environment variables* di Settings function:
-        *   `GOOGLE_SERVICE_ACCOUNT_JSON`: Salin seluruh konten dari file JSON yang diunduh pada langkah sebelumnya.
-        *   `APPWRITE_API_KEY`: API Key Appwrite dengan scope `users.read` dan `users.write`.
-        *   `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`.
-    *   [ ] Tulis kode function yang:
-        *   [ ] Menerima `userId`, `purchaseToken`, dan `productId` dari aplikasi Flutter.
-        *   [ ] Menggunakan library Google API (mis: `googleapis` untuk Node.js) dan kredensial dari `GOOGLE_SERVICE_ACCOUNT_JSON` untuk membuat client API.
-        *   [ ] Memanggil `androidpublisher.purchases.products.get()` dengan `packageName`, `productId`, dan `purchaseToken`.
-        *   [ ] Memverifikasi bahwa `purchaseState` adalah `0` (Purchased) dan `consumptionState` adalah `0` (Not yet consumed).
-        *   [ ] Jika valid, gunakan Appwrite Admin SDK untuk mengupdate Preferences pengguna menjadi `{ "isPremium": true }`.
-        *   [ ] Mengembalikan status sukses atau gagal ke aplikasi Flutter.
-
-*   **Langkah 3: Frontend di Aplikasi Flutter**
+*   **Langkah 2: Implementasi Frontend di Aplikasi Flutter**
     *   [x] Tambahkan package `in_app_purchase` ke `pubspec.yaml`.
-    *   [x] Buat sebuah `PurchaseService` atau `Provider` (Riverpod) untuk mengelola logika IAP (In-App Purchase).
-    *   [x] **Inisialisasi:** Dengarkan stream `InAppPurchase.instance.purchaseStream` untuk memantau status pembelian.
-    *   [x] **Ambil Produk:** Saat `PremiumPage` dimuat, panggil `InAppPurchase.instance.queryProductDetails()` dengan Product ID (`premium_upgrade_v1`) yang sudah dibuat.
-    *   [x] **Tampilkan UI:** Tampilkan detail produk (harga, nama) yang diterima dari Play Store.
-    *   [x] **Mulai Pembelian:** Saat tombol "Upgrade" ditekan, panggil `InAppPurchase.instance.buyNonConsumable()` dengan `PurchaseParam` yang sesuai.
+    *   [x] Buat `InAppPurchaseService` dan `Provider` (Riverpod) untuk mengelola logika IAP (In-App Purchase).
+    *   [x] **Inisialisasi:** Layanan IAP diinisialisasi saat aplikasi pertama kali dijalankan untuk memantau status pembelian secara terus-menerus.
+    *   [x] **Ambil Produk:** Saat halaman langganan dimuat, aplikasi memanggil `InAppPurchase.instance.queryProductDetails()` dengan Product ID (`premium_no_ads`).
+    *   [x] **Tampilkan UI:** Aplikasi menampilkan detail produk (harga, nama) yang diterima dari Play Store, atau menampilkan halaman status jika pengguna sudah premium.
+    *   [x] **Mulai Pembelian:** Saat tombol "Beli" ditekan, aplikasi memanggil `InAppPurchase.instance.buyNonConsumable()` dengan `PurchaseParam` yang sesuai.
     *   [x] **Proses Pembelian:** Di dalam listener `purchaseStream`:
-        *   [x] Jika status `updated.status` adalah `PurchaseStatus.purchased`:
-            *   [x] Tampilkan UI loading.
-            *   [x] Panggil Appwrite Function `verify-google-play-purchase` dengan membawa `purchaseToken`.
-            *   [x] Jika function merespons sukses:
-                *   [x] Panggil `InAppPurchase.instance.completePurchase(updated)`.
-                *   [x] Refresh state aplikasi untuk mengaktifkan fitur premium.
-            *   [x] Jika gagal, tampilkan pesan error.
-        *   [x] Jika statusnya `PurchaseStatus.error`, tampilkan error.
-        *   [x] Jika statusnya `PurchaseStatus.restored`, lakukan proses validasi yang sama seperti `purchased`.
-    *   [x] **Restore Purchase:** Sediakan tombol "Restore Purchases" yang memanggil `InAppPurchase.instance.restorePurchases()` untuk pengguna yang menginstal ulang aplikasi atau pindah perangkat.
+        *   [x] Jika status adalah `PurchaseStatus.purchased` atau `PurchaseStatus.restored`:
+            *   [x] Panggil `InAppPurchase.instance.completePurchase(updated)` untuk finalisasi transaksi dengan Google.
+            *   [x] Perbarui status `isPremium` di `AuthRepository` dan state aplikasi untuk mengaktifkan fitur premium.
+            *   [x] Atasi *race condition* untuk memastikan status premium tersinkronisasi dengan benar saat berganti akun di perangkat yang sama.
+        *   [x] Jika statusnya `PurchaseStatus.error`, tampilkan pesan error.
+    *   [x] **Restore Purchase:** Sediakan tombol "Pulihkan Pembelian" yang memanggil `InAppPurchase.instance.restorePurchases()`. Alur pemulihan ditangani oleh listener `purchaseStream` yang sama.
+
 
 #### Minggu 7: Testing, Dokumentasi, dan Persiapan Rilis
 *   **Testing:**

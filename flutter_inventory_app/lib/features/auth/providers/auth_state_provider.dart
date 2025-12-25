@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
+import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
+import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
+import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading, error }
 
@@ -45,11 +49,16 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _updateUserAndPremiumStatus() async {
     final user = await _authRepository.getCurrentUser();
     if (user != null) {
-      final isPremium = await _authRepository.isUserPremium();
+      final isPremiumFromRepo = await _authRepository.isUserPremium();
+
+      // FIX: Preserve premium status if it was already set by the IAP stream.
+      // This prevents a race condition where the repo check overwrites the live IAP status.
+      final bool newPremiumStatus = state.isPremium || isPremiumFromRepo;
+
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
-        isPremium: isPremium,
+        isPremium: newPremiumStatus,
       );
     } else {
       state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -86,6 +95,13 @@ class AuthController extends Notifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
     try {
       await _authRepository.signOut();
+      
+      // Invalidate all user-specific data providers
+      ref.invalidate(itemsProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(transactionsProvider);
+      ref.invalidate(activityLogsProvider);
+
       state = state.copyWith(status: AuthStatus.unauthenticated);
     } catch (e) {
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());

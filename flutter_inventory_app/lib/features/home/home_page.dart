@@ -11,7 +11,7 @@ import 'package:flutter_inventory_app/features/item/providers/item_providers.dar
 import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
-import 'package:flutter_inventory_app/features/subscription/pages/subscription_page.dart'; // Import SubscriptionPage
+
 
 // Top-level constants for Neubrutalism style used in this page
 const Color _neubrutalismBg = Color(0xFFF9F9F9);
@@ -67,8 +67,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
 
 
-              // Summary Cards
-              GridView.count(
+                // Summary Cards
+                GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,

@@ -183,12 +183,10 @@ class _MainPageState extends ConsumerState<MainPage> {
                     textColor: isPremium ? goldColor : Colors.black,
                     onTap: () {
                       Navigator.pop(context);
-                      if (!isPremium) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SubscriptionPage()),
-                        );
-                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SubscriptionPage()),
+                      );
                     },
                   ),
                   // Divider
