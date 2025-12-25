@@ -16,7 +16,9 @@ class SubscriptionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inAppPurchaseService = ref.watch(inAppPurchaseProvider);
-    final isPremium = ref.watch(authControllerProvider).isPremium;
+    final authState = ref.watch(authControllerProvider);
+    final isPremium = authState.isPremium;
+    final activeSubscriptionId = authState.activeSubscriptionId;
 
     ref.listen<InAppPurchaseService>(inAppPurchaseProvider, (previous, next) {
       if (next.purchasePendingError != null) {
@@ -38,12 +40,12 @@ class SubscriptionPage extends ConsumerWidget {
         elevation: 0,
       ),
       body: isPremium
-          ? _buildPremiumStatus(context)
+          ? _buildPremiumStatus(context, activeSubscriptionId)
           : _buildPurchaseOptions(context, ref, inAppPurchaseService),
     );
   }
 
-  Widget _buildPremiumStatus(BuildContext context) {
+  Widget _buildPremiumStatus(BuildContext context, String? subscriptionId) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -51,7 +53,7 @@ class SubscriptionPage extends ConsumerWidget {
           width: double.infinity,
           borderColor: _neubrutalismBorder,
           shadowColor: _neubrutalismBorder,
-          color: const Color(0x4DFFD700), // FIX: Replaced withOpacity with hex alpha
+          color: const Color(0x4DFFD700),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -76,6 +78,12 @@ class SubscriptionPage extends ConsumerWidget {
                   style: TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 24),
+                if (subscriptionId != null)
+                  Text(
+                    'Paket Aktif: $subscriptionId',
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                  ),
               ],
             ),
           ),
@@ -101,29 +109,6 @@ class SubscriptionPage extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _buildProductList(context, inAppPurchaseService),
-                      ),
-                      const SizedBox(height: 20),
-                      // FIX: Replaced NeuButton with NeuContainer + InkWell
-                      NeuContainer(
-                        borderColor: _neubrutalismBorder,
-                        shadowColor: _neubrutalismBorder,
-                        color: Colors.blue.shade200,
-                        child: InkWell(
-                          onTap: () {
-                            inAppPurchaseService.restorePurchases();
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.restore, color: Colors.black),
-                                SizedBox(width: 8),
-                                Text('Pulihkan Pembelian', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -164,7 +149,6 @@ class SubscriptionPage extends ConsumerWidget {
       itemBuilder: (context, index) {
         final product = inAppPurchaseService.products[index];
         
-        // Debug print to help identify product IDs
         if (kDebugMode) {
           print("Subscription Product ID: ${product.id}");
         }
@@ -195,7 +179,6 @@ class SubscriptionPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8.0),
                   
-                  // Price Section
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,

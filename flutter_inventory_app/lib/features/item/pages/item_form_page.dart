@@ -20,6 +20,9 @@ const Color _neubrutalismAccent = Color(0xFFE84A5F);
 const Color _neubrutalismBorder = Colors.black;
 const Offset _neubrutalismShadowOffset = Offset(4, 4);
 
+// List of predefined units for the dropdown
+final List<String> _predefinedUnits = ['Pcs', 'Box', 'Kg', 'Liter', 'Meter', 'Lusin', 'Gross', 'Kodi', 'Lainnya...'];
+
 class ItemFormPage extends ConsumerStatefulWidget {
   final Item? item;
   const ItemFormPage({super.key, this.item});
@@ -36,7 +39,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _minQuantityController;
-  late TextEditingController _unitController;
+  late TextEditingController _manualUnitController; // Controller for "Other" unit
+  late String _selectedUnit; // State for the dropdown
+  
   late TextEditingController _purchasePriceController;
   late TextEditingController _salePriceController;
   String? _selectedCategoryId;
@@ -56,10 +61,23 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _descriptionController = TextEditingController(text: item?.description ?? '');
     _quantityController = TextEditingController(text: item?.quantity.toString() ?? '1');
     _minQuantityController = TextEditingController(text: item?.minQuantity.toString() ?? '10');
-    _unitController = TextEditingController(text: item?.unit ?? 'Pcs');
     _purchasePriceController = TextEditingController(text: item?.purchasePrice?.toStringAsFixed(0) ?? '');
     _salePriceController = TextEditingController(text: item?.salePrice?.toStringAsFixed(0) ?? '');
     _selectedCategoryId = item?.categoryId;
+    
+    // --- Unit Dropdown Logic ---
+    final initialUnit = item?.unit;
+    if (initialUnit != null && _predefinedUnits.contains(initialUnit)) {
+      _selectedUnit = initialUnit;
+      _manualUnitController = TextEditingController();
+    } else if (initialUnit != null) {
+      _selectedUnit = 'Lainnya...';
+      _manualUnitController = TextEditingController(text: initialUnit);
+    } else {
+      _selectedUnit = 'Pcs';
+      _manualUnitController = TextEditingController();
+    }
+    // --- End Unit Logic ---
 
     final imageId = widget.item?.imageId;
     if (imageId != null && imageId.isNotEmpty) {
@@ -88,7 +106,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _descriptionController.dispose();
     _quantityController.dispose();
     _minQuantityController.dispose();
-    _unitController.dispose();
+    _manualUnitController.dispose();
     _purchasePriceController.dispose();
     _salePriceController.dispose();
     _interstitialAd?.dispose();
@@ -147,6 +165,12 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      final unitValue = _selectedUnit == 'Lainnya...' ? _manualUnitController.text.trim() : _selectedUnit;
+      if (unitValue.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unit manual tidak boleh kosong.'), backgroundColor: Colors.red));
+        return;
+      }
+      
       setState(() => _isLoading = true);
 
       final isEditMode = widget.item != null;
@@ -191,7 +215,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         description: _descriptionController.text.trim(),
         quantity: int.tryParse(_quantityController.text) ?? 0,
         minQuantity: int.tryParse(_minQuantityController.text) ?? 0,
-        unit: _unitController.text.trim(),
+        unit: unitValue,
         purchasePrice: double.tryParse(_purchasePriceController.text),
         salePrice: double.tryParse(_salePriceController.text),
         categoryId: _selectedCategoryId, imageId: widget.item?.imageId,
@@ -267,7 +291,9 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                     _buildTextField(_barcodeController, 'Barcode (Opsional, bisa di-scan)', null),
                     _buildTextField(_brandController, 'Merek (Opsional, misal: Kapal Api)', null),
                     _buildTextField(_descriptionController, 'Deskripsi/Catatan (Opsional)', null, maxLines: 3),
-                    _buildTextField(_unitController, 'Unit Satuan (Misal: Pcs, Box, Kg)', 'Unit tidak boleh kosong'),
+                    _buildUnitDropdown(), // Changed to dropdown
+                    if (_selectedUnit == 'Lainnya...')
+                      _buildTextField(_manualUnitController, 'Masukkan Satuan Manual', 'Unit manual tidak boleh kosong'),
                     Row(
                       children: [
                         Expanded(child: _buildNumericField(_quantityController, 'Jumlah Stok Awal')),
@@ -431,6 +457,40 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
               setState(() {
                 _selectedCategoryId = newValue;
               });
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnitDropdown() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: NeuContainer(
+        borderColor: _neubrutalismBorder,
+        shadowColor: _neubrutalismBorder,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: DropdownButtonFormField<String>(
+            value: _selectedUnit,
+            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Pilih Satuan'),
+            items: _predefinedUnits.map((String unit) {
+              return DropdownMenuItem<String>(value: unit, child: Text(unit));
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedUnit = newValue!;
+                if (newValue != 'Lainnya...') {
+                  _manualUnitController.clear();
+                }
+              });
+            },
+            validator: (value) {
+              if (value == null) return 'Pilih satuan';
+              return null;
             },
           ),
         ),

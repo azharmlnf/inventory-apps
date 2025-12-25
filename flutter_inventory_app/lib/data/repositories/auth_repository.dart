@@ -73,10 +73,22 @@ class AuthRepository {
     }
   }
 
-  /// Update status premium user.
-  Future<void> updatePremiumStatus(bool isPremium) async {
+  /// Update status premium user and the purchased product ID.
+  Future<void> updatePremiumStatus(bool isPremium, String? productId) async {
     try {
-      await _account.updatePrefs(prefs: {'isPremium': isPremium});
+      // Get existing prefs to merge, otherwise this will overwrite everything.
+      final currentPrefs = await _account.getPrefs();
+      final newPrefs = Map<String, dynamic>.from(currentPrefs.data);
+      
+      newPrefs['isPremium'] = isPremium;
+      // Only update productId if provided, don't null it out otherwise unless premium is false
+      if (productId != null) {
+        newPrefs['activeSubscriptionId'] = productId;
+      } else if (!isPremium) {
+        newPrefs.remove('activeSubscriptionId');
+      }
+
+      await _account.updatePrefs(prefs: newPrefs);
     } on AppwriteException catch (e) {
       throw e.message ?? 'Gagal memperbarui status premium.';
     }

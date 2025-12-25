@@ -88,8 +88,11 @@ class InAppPurchaseService extends ChangeNotifier {
 
     // Update the user's premium status via AuthController
     try {
-      await _ref.read(authControllerProvider.notifier).updatePremiumStatus(true);
-      print('User premium status updated successfully via provider.');
+      await _ref.read(authControllerProvider.notifier).updatePremiumStatus(
+        true,
+        productId: purchaseDetails.productID,
+      );
+      print('User premium status and product ID updated successfully via provider.');
     } catch (e) {
       print('Error updating premium status via provider: $e');
     }

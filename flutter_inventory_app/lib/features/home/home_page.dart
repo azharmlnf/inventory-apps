@@ -198,7 +198,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 style: const TextStyle(fontWeight: FontWeight.bold, color: _neubrutalismText, fontSize: 16),
                                               ),
                                               Text(
-                                                '${DateFormat('dd/MM/yyyy HH:mm').format(transaction.date)} - ${transaction.note}',
+                                                (transaction.note?.isNotEmpty ?? false)
+                                                  ? '${DateFormat('dd/MM/yyyy HH:mm').format(transaction.date)} - ${transaction.note}'
+                                                  : DateFormat('dd/MM/yyyy HH:mm').format(transaction.date),
                                                 style: const TextStyle(fontSize: 12, color: Colors.black54),
                                               ),
                                             ],

@@ -14,12 +14,14 @@ class AuthState {
   final models.User? user;
   final String? errorMessage;
   final bool isPremium;
+  final String? activeSubscriptionId; // Added this field
 
   AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.errorMessage,
     this.isPremium = false,
+    this.activeSubscriptionId, // Added to constructor
   });
 
   AuthState copyWith({
@@ -27,14 +29,16 @@ class AuthState {
     models.User? user,
     String? errorMessage,
     bool? isPremium,
+    String? activeSubscriptionId, // Added to copyWith
   }) {
-    // When status is unauthenticated, user and isPremium should be cleared.
     final bool shouldClear = status == AuthStatus.unauthenticated;
     return AuthState(
       status: status ?? this.status,
       user: shouldClear ? null : user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
       isPremium: shouldClear ? false : isPremium ?? this.isPremium,
+      // Clear on logout, otherwise update
+      activeSubscriptionId: shouldClear ? null : activeSubscriptionId ?? this.activeSubscriptionId,
     );
   }
 }
@@ -50,16 +54,15 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _updateUserAndPremiumStatus() async {
     final user = await _authRepository.getCurrentUser();
     if (user != null) {
-      final isPremiumFromRepo = await _authRepository.isUserPremium();
-
-      // FIX: Preserve premium status if it was already set by the IAP stream.
-      // This prevents a race condition where the repo check overwrites the live IAP status.
-      final bool newPremiumStatus = state.isPremium || isPremiumFromRepo;
+      // Read isPremium and activeSubscriptionId from user preferences
+      final isPremiumFromPrefs = user.prefs.data['isPremium'] ?? false;
+      final subscriptionIdFromPrefs = user.prefs.data['activeSubscriptionId'];
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
-        isPremium: newPremiumStatus,
+        isPremium: isPremiumFromPrefs,
+        activeSubscriptionId: subscriptionIdFromPrefs,
       );
     } else {
       state = state.copyWith(status: AuthStatus.unauthenticated);
@@ -101,7 +104,6 @@ class AuthController extends Notifier<AuthState> {
       debugPrint("[AUTH] signOut: _authRepository.signOut() completed.");
       
       debugPrint("[AUTH] signOut: Invalidating user-specific providers...");
-      // Invalidate all user-specific data providers
       ref.invalidate(itemsProvider);
       ref.invalidate(categoriesProvider);
       ref.invalidate(transactionsProvider);
@@ -117,12 +119,12 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<void> updatePremiumStatus(bool isPremium) async {
+  Future<void> updatePremiumStatus(bool isPremium, {String? productId}) async {
     try {
-      await _authRepository.updatePremiumStatus(isPremium);
-      state = state.copyWith(isPremium: isPremium);
+      await _authRepository.updatePremiumStatus(isPremium, productId);
+      // Also update the local state immediately
+      state = state.copyWith(isPremium: isPremium, activeSubscriptionId: productId);
     } catch (e) {
-      // Optionally handle or rethrow the error
       state = state.copyWith(errorMessage: e.toString());
     }
   }
