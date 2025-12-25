@@ -6,6 +6,7 @@ import 'package:flutter_inventory_app/features/item/providers/item_providers.dar
 import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading, error }
 
