@@ -114,6 +114,19 @@ class _MainPageState extends ConsumerState<MainPage> {
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 children: [
+                  _buildDrawerItem( // This is the premium item
+                    icon: Icons.workspace_premium,
+                    text: isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
+                    buttonColor: isPremium ? goldColor.withAlpha(50) : Colors.white,
+                    textColor: isPremium ? goldColor : Colors.black,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SubscriptionPage()),
+                      );
+                    },
+                  ),
                   _buildDrawerItem(
                     icon: Icons.home,
                     text: _pageTitles[0],
@@ -173,19 +186,6 @@ class _MainPageState extends ConsumerState<MainPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const SettingsPage()),
-                      );
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.workspace_premium,
-                    text: isPremium ? 'Akun Premium' : 'Upgrade ke Premium',
-                    buttonColor: isPremium ? goldColor.withAlpha(50) : Colors.white,
-                    textColor: isPremium ? goldColor : Colors.black,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SubscriptionPage()),
                       );
                     },
                   ),

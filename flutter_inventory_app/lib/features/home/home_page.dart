@@ -74,7 +74,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
-                childAspectRatio: 1.2,
+                childAspectRatio: 1.5,
                 children: [
                   totalJenisBarangAsync.when(
                     data: (count) => _buildSummaryCard(
@@ -241,7 +241,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       color: color,
       borderRadius: BorderRadius.circular(15),
       child: Padding(
-        padding: const EdgeInsets.all(15.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

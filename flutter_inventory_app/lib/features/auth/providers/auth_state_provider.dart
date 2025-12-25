@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
@@ -92,18 +93,26 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> signOut() async {
+    debugPrint("[AUTH] signOut: Initiated. Setting status to loading.");
     state = state.copyWith(status: AuthStatus.loading);
     try {
+      debugPrint("[AUTH] signOut: Calling _authRepository.signOut()...");
       await _authRepository.signOut();
+      debugPrint("[AUTH] signOut: _authRepository.signOut() completed.");
       
+      debugPrint("[AUTH] signOut: Invalidating user-specific providers...");
       // Invalidate all user-specific data providers
       ref.invalidate(itemsProvider);
       ref.invalidate(categoriesProvider);
       ref.invalidate(transactionsProvider);
       ref.invalidate(activityLogsProvider);
+      debugPrint("[AUTH] signOut: Providers invalidated.");
 
+      debugPrint("[AUTH] signOut: Setting status to unauthenticated.");
       state = state.copyWith(status: AuthStatus.unauthenticated);
+      debugPrint("[AUTH] signOut: Completed successfully.");
     } catch (e) {
+      debugPrint("[AUTH] signOut: FAILED with error: $e");
       state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
     }
   }
