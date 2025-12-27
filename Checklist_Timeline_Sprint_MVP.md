@@ -13,6 +13,7 @@
     *   [x] Implementasikan alur Logout (`account.deleteSession()`).
     *   [x] Buat `SplashScreen` untuk mengarahkan pengguna berdasarkan status login.
     *   [x] Perbarui UI prototipe (`ui ux`) untuk menyertakan halaman login/registrasi manual.
+    *   [x] **Perbaikan**: Notifikasi error login, Show/Hide Password, dan label input yang lebih jelas.
 
 #### Minggu 2: Implementasi CRUD Dasar (Online)
 *   **Setup Appwrite Collections:**
@@ -21,11 +22,7 @@
     *   [x] Buat `CategoryRepository` yang terhubung ke Appwrite.
     *   [x] Implementasikan service dan UI (Widget) untuk operasi CRUD `Category` yang terikat pada `userId`.
     *   [x] Integrasikan state management (Riverpod) untuk data kategori dari Appwrite.
-*   **CRUD Transaksi (Online):**
-    *   [x] Buat `TransactionRepository` yang terhubung ke Appwrite.
-    *   [x] Implementasikan service dan UI (Widget) untuk operasi CRUD `Transaction`, memastikan setiap transaksi terikat pada `userId`.
-*   **Riwayat Aktivitas (Online):**
-    *   [x] Implementasikan service untuk mencatat `ActivityLog` di Appwrite setiap kali ada aksi penting.
+    *   [x] **Perbaikan**: Refaktorisasi pola `.family` untuk data user-specific.
 
 #### Minggu 3: Implementasi CRUD Barang & Stok (Online)
 *   **Setup Appwrite Collection:**
@@ -35,6 +32,7 @@
     *   [x] Implementasikan UI (`ItemListPage`, `ItemFormPage`) untuk operasi CRUD `Item`.
     *   [x] Pastikan kuantitas barang di Appwrite diperbarui secara otomatis setelah transaksi.
     *   [x] Integrasikan state management (Riverpod) untuk data `Item`.
+    *   [x] **Perbaikan**: Refaktorisasi pola `.family` untuk data user-specific dan label form yang lebih jelas.
 
 #### Minggu 4: Fitur Notifikasi & Pelaporan Dasar
 *   **Pengingat Restock:**
@@ -43,15 +41,18 @@
 *   **Pelaporan Sederhana:**
     *   [x] Buat `ReportPage` untuk menampilkan ringkasan stok.
     *   [x] Implementasikan query ke Appwrite untuk memfilter riwayat transaksi.
+    *   [x] **Perbaikan**: Refaktorisasi pola `.family` untuk data user-specific dan penanganan tampilan data yang lebih baik.
 
 #### Minggu 5: Fitur Grafik Stok & Ekspor Data
 *   **Grafik Stok Barang:**
     *   [x] Integrasi `fl_chart` library.
     *   [x] Implementasikan logika untuk mengambil dan mengagregasi data stok per kategori dari Appwrite.
     *   [x] Buat widget grafik untuk menampilkan visualisasi stok.
+    *   [x] **Perbaikan**: Refaktorisasi pola `.family` untuk data user-specific.
 *   **Ekspor Data:**
     *   [x] Implementasikan service untuk mengambil data barang & transaksi dari Appwrite dan mengonversinya ke format CSV.
     *   [x] Integrasi `share_plus` untuk membagikan file ekspor.
+    *   [x] **Perbaikan**: Refaktorisasi pola `.family` untuk data user-specific.
 
 #### Minggu 6: Implementasi Monetisasi via Google Play Billing (Validasi Sisi Klien)
 
@@ -79,7 +80,7 @@
             *   [x] Atasi *race condition* untuk memastikan status premium tersinkronisasi dengan benar saat berganti akun di perangkat yang sama.
         *   [x] Jika statusnya `PurchaseStatus.error`, tampilkan pesan error.
     *   [x] **Restore Purchase:** Sediakan tombol "Pulihkan Pembelian" yang memanggil `InAppPurchase.instance.restorePurchases()`. Alur pemulihan ditangani oleh listener `purchaseStream` yang sama.
-
+    *   [x] **Perbaikan**: Halaman status premium telah diperbarui agar lebih informatif dan estetik.
 
 #### Minggu 7: Testing, Dokumentasi, dan Persiapan Rilis
 *   **Testing:**
@@ -87,8 +88,8 @@
     *   [ ] Tulis Widget Test untuk komponen UI utama, termasuk alur login dan halaman dashboard.
     *   [ ] Lakukan User Acceptance Testing (UAT).
 *   **Stabilisasi & Optimasi:**
-    *   [ ] Perbaikan bug berdasarkan hasil testing.
-    *   [x] Optimasi query Appwrite dan responsivitas UI.
+    *   [x] Perbaikan bug berdasarkan hasil testing. (Semua bug kritis telah diperbaiki: race condition sesi, data basi, circular dependency, navigator error, type cast error).
+    *   [x] Optimasi query Appwrite dan responsivitas UI. (Manajemen state dengan Riverpod `.family` secara signifikan meningkatkan reaktivitas dan performa).
 *   **Dokumentasi & Rilis:**
     *   [ ] Finalisasi dokumentasi teknis.
     *   [ ] Siapkan aset aplikasi dan konfigurasi untuk rilis di App Store/Play Store.

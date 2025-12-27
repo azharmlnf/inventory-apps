@@ -16,6 +16,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isPasswordObscured = true;
 
   @override
   void dispose() {
@@ -121,12 +122,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Password',
                         border: InputBorder.none,
-                        icon: Icon(Icons.lock_outline),
+                        icon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordObscured = !_isPasswordObscured;
+                            });
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      obscureText: _isPasswordObscured,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Mohon masukkan password Anda';

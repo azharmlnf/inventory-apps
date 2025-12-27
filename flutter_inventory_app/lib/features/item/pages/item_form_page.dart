@@ -440,7 +440,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: TextFormField(
             controller: controller,
-            decoration: InputDecoration(hintText: label, border: InputBorder.none),
+            decoration: InputDecoration(labelText: label, border: InputBorder.none),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: (value) {
@@ -466,7 +466,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: DropdownButtonFormField<String>(
             value: _selectedCategoryId,
-            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Pilih Kategori'),
+            decoration: const InputDecoration(labelText: 'Kategori', border: InputBorder.none),
             items: [
               const DropdownMenuItem<String>(value: null, child: Text('Tidak Berkategori')),
               ...categories.map((Category category) {
@@ -496,7 +496,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: DropdownButtonFormField<String>(
             value: _selectedUnit,
-            decoration: const InputDecoration(border: InputBorder.none, hintText: 'Pilih Satuan'),
+            decoration: const InputDecoration(labelText: 'Satuan', border: InputBorder.none),
             items: _predefinedUnits.map((String unit) {
               return DropdownMenuItem<String>(value: unit, child: Text(unit));
             }).toList(),
