@@ -4,14 +4,12 @@ import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/data/repositories/transaction_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart'; // Import appwrite_provider
-import 'package:flutter_inventory_app/data/repositories/activity_log_repository.dart'; // Import for ActivityLogRepository
-import 'package:flutter_inventory_app/data/repositories/auth_repository.dart'; // Import for AuthRepository // Import for AuthRepository
-import 'package:appwrite/appwrite.dart'; // Import Account from appwrite
-
+import 'package:flutter_inventory_app/data/repositories/activity_log_repository.dart';
+import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
 import 'package:flutter_inventory_app/domain/services/transaction_service.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_provider.dart'; // Import item provider
+import 'package:flutter_inventory_app/features/item/providers/item_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepository(ref.read(appwriteDatabaseProvider));
@@ -47,11 +45,13 @@ class TransactionNotifier extends AsyncNotifier<List<Transaction>> {
   /// Metode `build` akan dipanggil otomatis untuk mengambil data awal.
   /// Ia juga akan dipanggil ulang jika dependensi (seperti auth state) berubah.
   @override
-  FutureOr<List<Transaction>> build() {
-    final authState = ref.watch(authControllerProvider);
+  Future<List<Transaction>> build() async {
+    // Wait for a stable session from the new session controller.
+    final session = await ref.watch(sessionControllerProvider.future);
 
-    if (authState.status != AuthStatus.authenticated) {
-      return []; // Kembalikan list kosong jika tidak ada user yang login
+    // If there is no user session, return an empty list.
+    if (session == null) {
+      return [];
     }
     
     return ref.read(transactionServiceProvider).getTransactions();

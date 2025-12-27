@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
 import 'package:flutter_inventory_app/presentation/pages/main_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/splash_page.dart';
 import 'package:flutter_inventory_app/domain/services/notification_service.dart';
 import 'package:flutter_inventory_app/providers/in_app_purchase_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/features/auth/pages/login_page.dart';
 
 // --- Providers ---
 
@@ -21,11 +21,8 @@ final initializationProvider = FutureProvider<void>((ref) async {
   await MobileAds.instance.initialize();
   await ref.read(notificationServiceProvider).init();
   await ref.read(inAppPurchaseProvider).initialize();
-  
-  // After initialization, check the current user.
-  // This needs to be done here to ensure services are ready before auth check.
-  await ref.read(authControllerProvider.notifier).checkCurrentUser();
 });
+
 
 
 // --- App Entry Point ---
@@ -78,19 +75,25 @@ class AuthChecker extends ConsumerWidget {
         );
       },
       data: (_) {
-        // Once initialization is done, watch the auth status.
-        final authState = ref.watch(authControllerProvider);
-        switch (authState.status) {
-          case AuthStatus.authenticated:
-            return const MainPage();
-          case AuthStatus.unauthenticated:
-          case AuthStatus.error:
-            return const LoginPage();
-          case AuthStatus.initial:
-          case AuthStatus.loading:
-            // This state is hit while checkCurrentUser is running.
-            return const SplashPage();
-        }
+        // Once initialization is done, watch the new session controller state.
+        final authState = ref.watch(sessionControllerProvider);
+        return authState.when(
+          loading: () => const SplashPage(),
+          error: (err, stack) => Scaffold(
+            body: Center(
+              child: Text('Gagal memuat sesi user:\n$err'),
+            ),
+          ),
+          data: (user) {
+            if (user != null) {
+              // User is logged in
+              return const MainPage();
+            } else {
+              // User is not logged in
+              return const LoginPage();
+            }
+          },
+        );
       },
     );
   }

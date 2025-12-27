@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/providers/in_app_purchase_provider.dart';
 import 'package:flutter_inventory_app/services/in_app_purchase_service.dart';
 
@@ -16,9 +16,20 @@ class SubscriptionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inAppPurchaseService = ref.watch(inAppPurchaseProvider);
-    final authState = ref.watch(authControllerProvider);
-    final isPremium = authState.isPremium;
-    final activeSubscriptionId = authState.activeSubscriptionId;
+
+    // Correctly get user data from the new session controller
+    final userAsync = ref.watch(sessionControllerProvider);
+    final user = userAsync.value;
+
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+    
+    final activeSubscriptionId = user?.prefs.data['activeSubscriptionId'] as String?;
 
     ref.listen<InAppPurchaseService>(inAppPurchaseProvider, (previous, next) {
       if (next.purchasePendingError != null) {

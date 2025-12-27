@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
-import 'package:flutter_inventory_app/domain/services/item_service.dart'; // <-- Needed for ref.read(itemServiceProvider)
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart'; // <-- Needed for itemServiceProvider
 import 'package:flutter_inventory_app/features/item/providers/item_search_provider.dart';
@@ -16,18 +15,21 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   /// Metode `build` akan dipanggil otomatis untuk mengambil data awal.
   /// Ia juga akan dipanggil ulang jika dependensi (seperti auth state, search, filter, atau sort) berubah.
   @override
-  FutureOr<List<Item>> build() {
-    // Provider ini "mendengarkan" semua provider state yang relevan.
-    final authState = ref.watch(authControllerProvider);
+  Future<List<Item>> build() async {
+    // Wait for a stable session from the new session controller.
+    final session = await ref.watch(sessionControllerProvider.future);
+
+    // If there is no user session, return an empty list.
+    if (session == null) {
+      return [];
+    }
+
+    // This provider now "listens" to the other state providers.
     final searchQuery = ref.watch(itemSearchQueryProvider);
     final categoryFilter = ref.watch(itemCategoryFilterProvider);
     final sortType = ref.watch(itemSortProvider);
-
-    if (authState.status != AuthStatus.authenticated) {
-      return []; // Kembalikan list kosong jika tidak ada user yang login
-    }
     
-    // Ambil data item dengan semua parameter yang ada.
+    // Fetch item data with all available parameters.
     return ref.read(itemServiceProvider).getItems(
           searchQuery: searchQuery,
           categoryId: categoryFilter,

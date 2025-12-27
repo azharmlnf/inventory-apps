@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+
 
 // Service is now a standard class, managed by Riverpod
 class InAppPurchaseService extends ChangeNotifier {
@@ -88,7 +89,7 @@ class InAppPurchaseService extends ChangeNotifier {
 
     // Update the user's premium status via AuthController
     try {
-      await _ref.read(authControllerProvider.notifier).updatePremiumStatus(
+      await _ref.read(sessionControllerProvider.notifier).updatePremiumStatus(
         true,
         productId: purchaseDetails.productID,
       );

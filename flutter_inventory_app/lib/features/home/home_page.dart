@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+
 import 'package:flutter_inventory_app/features/home/providers/dashboard_providers.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/presentation/widgets/stock_chart.dart';
@@ -48,16 +48,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     final transactionsTodayAsync = ref.watch(transactionsTodayProvider);
     final latestTransactionsAsync = ref.watch(latestTransactionsProvider);
 
-    // Listen for auth state changes to refresh data
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
-      if (previous?.user == null && next.user != null) {
-        ref.invalidate(itemsProvider);
-        ref.invalidate(categoriesProvider);
-        ref.invalidate(transactionsProvider);
-        ref.invalidate(activityLogsProvider);
-      }
-    });
-
+    // Listen for auth state changes to refresh data - THIS IS NOW REDUNDANT
+    // The downstream providers (items, categories, etc.) should react to
+    // changes in `currentUserProvider` automatically.
+    
     return Container(
       color: _neubrutalismBg,
       child: SingleChildScrollView(

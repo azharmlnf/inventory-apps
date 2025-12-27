@@ -5,12 +5,12 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/repositories/category_repository.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 
 // # ASYNC NOTIFIER PROVIDER
 // Ini adalah provider utama untuk state management kategori.
 // Ia akan mengelola pengambilan data, caching, dan re-fetching secara otomatis.
-final categoryProvider = AsyncNotifierProvider<CategoryNotifier, List<Category>>(CategoryNotifier.new);
+final categoriesProvider = AsyncNotifierProvider<CategoryNotifier, List<Category>>(CategoryNotifier.new);
 
 /// Notifier ini bertanggung jawab untuk:
 /// 1. Mengambil daftar kategori awal.
@@ -22,32 +22,34 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
   // Metode ini akan dipanggil secara otomatis saat provider pertama kali dibaca.
   // Tugasnya adalah mengambil daftar kategori awal.
   @override
-  FutureOr<List<Category>> build() {
-    // Dapatkan userId dari provider otentikasi
-    final userId = ref.watch(authControllerProvider).user?.$id;
-    // Jika tidak ada userId (belum login), kembalikan list kosong
-    if (userId == null) {
+  Future<List<Category>> build() async {
+    // Wait for a stable session from the new session controller.
+    final session = await ref.watch(sessionControllerProvider.future);
+
+    // If there is no user session, return an empty list.
+    if (session == null) {
       return [];
     }
-    // Panggil repository untuk mengambil data dari Appwrite
-    return ref.read(categoryRepositoryProvider).getCategories(userId);
+    
+    // Call the repository with the stable user ID.
+    return ref.read(categoryRepositoryProvider).getCategories(session.$id);
   }
 
   // # FUNGSI CRUD: MENAMBAH KATEGORI
   Future<void> addCategory({required String name}) async {
-    final userId = ref.read(authControllerProvider).user?.$id;
-    if (userId == null) {
+    // Get the user ID from the stable session.
+    final session = await ref.read(sessionControllerProvider.future);
+    if (session == null) {
       throw Exception('User not logged in');
     }
 
-    // Set state ke loading untuk memberikan feedback ke UI
+    // Set state to loading to provide feedback to the UI
     state = const AsyncValue.loading();
 
-    // Lakukan operasi secara optimis: perbarui state dengan data baru
-    // sambil menunggu hasil dari server.
+    // Perform the operation and then refetch the data.
     state = await AsyncValue.guard(() async {
-      await ref.read(categoryRepositoryProvider).createCategory(userId: userId, name: name);
-      // Setelah berhasil, panggil kembali build() untuk mengambil data terbaru dari server
+      await ref.read(categoryRepositoryProvider).createCategory(userId: session.$id, name: name);
+      // After success, refetch the latest data from the server
       return build();
     });
   }

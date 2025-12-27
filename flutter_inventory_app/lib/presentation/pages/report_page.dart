@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:flutter_inventory_app/domain/services/export_service.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/features/home/providers/dashboard_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:intl/intl.dart';
@@ -42,7 +42,17 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   }
 
   void _loadBannerAd() {
-    if (ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
+    if (isPremium) {
       return;
     }
 

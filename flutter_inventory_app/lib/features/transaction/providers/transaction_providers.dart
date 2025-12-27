@@ -1,11 +1,11 @@
 import 'package:flutter_inventory_app/domain/services/transaction_service.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/data/repositories/transaction_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 
@@ -90,11 +90,19 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
   }
 
   Future<void> addTransaction(Transaction transaction) async {
-    state = const AsyncValue.loading();
-    await ref.read(transactionServiceProvider).createTransaction(transaction);
-    state = await AsyncValue.guard(() => _fetchTransactions());
+    // Correctly check premium status from sessionControllerProvider
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
     // Show interstitial ad if user is not premium
-    if (!ref.read(authControllerProvider).isPremium) {
+    if (!isPremium) {
       ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
     }
   }
@@ -103,8 +111,20 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
     state = const AsyncValue.loading();
     await ref.read(transactionServiceProvider).updateTransaction(transaction);
     state = await AsyncValue.guard(() => _fetchTransactions());
+
+    // Correctly check premium status from sessionControllerProvider
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
     // Show interstitial ad if user is not premium
-    if (!ref.read(authControllerProvider).isPremium) {
+    if (!isPremium) {
       ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
     }
   }
@@ -113,8 +133,20 @@ class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
     state = const AsyncValue.loading();
     await AsyncValue.guard(() => ref.read(transactionServiceProvider).deleteTransaction(transactionId));
     state = await AsyncValue.guard(() => _fetchTransactions());
+    
+    // Correctly check premium status from sessionControllerProvider
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
     // Show interstitial ad if user is not premium
-    if (!ref.read(authControllerProvider).isPremium) {
+    if (!isPremium) {
       ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
     }
   }

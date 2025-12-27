@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/features/activity/providers/activity_providers.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -40,7 +41,10 @@ class _ActivityLogListPageState extends ConsumerState<ActivityLogListPage> {
   }
 
   void _loadBannerAd() {
-    if (ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    final isPremium = user?.prefs.data['isPremium'] as bool? ?? false;
+
+    if (isPremium) {
       return;
     }
 

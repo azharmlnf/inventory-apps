@@ -6,7 +6,8 @@ import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -61,7 +62,17 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   }
 
   void _loadBannerAd() {
-    if (ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
+    if (isPremium) {
       return;
     }
 
@@ -85,7 +96,17 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   }
 
   void _loadInterstitialAd() {
-    if (ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+    
+    if (isPremium) {
       return;
     }
     ref.read(adServiceProvider).createInterstitialAd(

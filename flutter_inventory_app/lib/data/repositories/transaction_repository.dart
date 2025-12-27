@@ -6,7 +6,7 @@ import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 
 /// Provider untuk TransactionRepository.
-final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
+final transactionRepositoryProvider = Provider.autoDispose<TransactionRepository>((ref) {
   final databases = ref.watch(appwriteDatabaseProvider);
   return TransactionRepository(databases);
 });

@@ -9,7 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/models/item.dart';
@@ -92,7 +93,18 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   }
 
   void _loadInterstitialAd() {
-    if (kIsWeb || ref.read(authControllerProvider).isPremium) return;
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
+    if (kIsWeb || isPremium) return;
+    
     ref.read(adServiceProvider).createInterstitialAd(
       onAdLoaded: (ad) => _interstitialAd = ad,
     );

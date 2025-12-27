@@ -1,7 +1,7 @@
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart' as models;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/services/in_app_purchase_service.dart'; // Add this import
 
 final appwriteClientProvider = Provider<Client>((ref) {
   final endpoint = dotenv.env['APPWRITE_ENDPOINT']!;
@@ -30,4 +30,3 @@ final appwriteFunctionProvider = Provider<Functions>((ref) {
   final client = ref.watch(appwriteClientProvider);
   return Functions(client);
 });
-

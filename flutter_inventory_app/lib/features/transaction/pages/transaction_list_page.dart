@@ -6,7 +6,8 @@ import 'package:flutter_inventory_app/features/transaction/providers/transaction
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_provider.dart'; // To get item details
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart'; // For adding/editing transactions
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 import 'package:intl/intl.dart';
@@ -43,7 +44,17 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
   }
 
   void _loadBannerAd() {
-    if (ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+    
+    if (isPremium) {
       return;
     }
 

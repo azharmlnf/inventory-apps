@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/features/category/providers/category_providers.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -37,7 +37,16 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final isPremium = ref.watch(authControllerProvider).isPremium;
+    final user = ref.watch(sessionControllerProvider).value;
+
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+    
     if (!isPremium && !_isAdLoaded) {
       _loadBannerAd();
     }
@@ -377,7 +386,7 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
     if (_formKey.currentState!.validate()) {
       final navigator = Navigator.of(context);
       final future = _isEditing
-          ? ref.read(categoriesProvider.notifier).updateCategory(widget.category!.id, _controller.text.trim())
+? ref.read(categoriesProvider.notifier).updateCategory(widget.category!.id, _controller.text.trim())
           : ref.read(categoriesProvider.notifier).addCategory(_controller.text.trim());
 
       await future;

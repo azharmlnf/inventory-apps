@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/features/auth/pages/register_page.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -30,7 +30,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _isLoading = true;
       });
       try {
-        await ref.read(authControllerProvider.notifier).signIn(
+        await ref.read(sessionControllerProvider.notifier).login(
               _emailController.text.trim(),
               _passwordController.text.trim(),
             );

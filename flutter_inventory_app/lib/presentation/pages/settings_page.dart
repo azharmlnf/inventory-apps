@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart' as neubrutalism_ui;
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -133,8 +133,7 @@ class SettingsPage extends ConsumerWidget {
               offset: const Offset(4, 4), // Assuming consistent offset
               child: InkWell(
                 onTap: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  ref.read(authControllerProvider.notifier).signOut();
+                  ref.read(sessionControllerProvider.notifier).logout();
                 },
                 child: SizedBox(
                   height: 50,

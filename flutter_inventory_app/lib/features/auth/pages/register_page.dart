@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -15,6 +15,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,38 +27,42 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
-      final wasSuccessful = await ref.read(authControllerProvider.notifier).signUp(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-            _nameController.text.trim(),
+      setState(() => _isLoading = true);
+      try {
+        await ref.read(sessionControllerProvider.notifier).signUp(
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+              _nameController.text.trim(),
+            );
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registrasi berhasil! Silakan login.'),
+              backgroundColor: Colors.green,
+            ),
           );
-      if (wasSuccessful && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registrasi berhasil! Silakan login.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
-      if (next.status == AuthStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage ?? 'Registrasi Gagal'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-
-    final authState = ref.watch(authControllerProvider);
-    
     const neubrutalismAccent = Color(0xFFE84A5F);
     const neubrutalismBorder = Colors.black;
     const neubrutalismShadowOffset = Offset(4, 4);
@@ -172,7 +177,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                authState.status == AuthStatus.loading
+                _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : NeuTextButton(
                         onPressed: _submit,
@@ -195,7 +200,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 20),
                 NeuTextButton(
                   onPressed: () {
-                    ref.read(authControllerProvider.notifier).resetStateToInitial();
                     Navigator.of(context).pop();
                   },
                   enableAnimation: true,

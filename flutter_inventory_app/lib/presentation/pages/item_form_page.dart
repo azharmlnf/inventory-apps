@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
@@ -70,9 +70,20 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   }
 
   void _loadInterstitialAd() {
-    if (kIsWeb || ref.read(authControllerProvider).isPremium) {
+    final user = ref.read(sessionControllerProvider).value;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+
+    if (kIsWeb || isPremium) {
       return;
     }
+    
     ref.read(adServiceProvider).createInterstitialAd(
       onAdLoaded: (ad) {
         _interstitialAd = ad;
@@ -227,7 +238,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.item != null;
-    final categoriesAsync = ref.watch(categoryProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(

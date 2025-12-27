@@ -5,6 +5,7 @@ import 'package:flutter_inventory_app/domain/services/activity_log_service.dart'
 import 'package:flutter_inventory_app/domain/services/item_service.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_search_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/main.dart'; // For notificationServiceProvider
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,8 +26,15 @@ final itemsProvider = AsyncNotifierProvider<ItemsNotifier, List<Item>>(() {
 class ItemsNotifier extends AsyncNotifier<List<Item>> {
   @override
   Future<List<Item>> build() async {
-    // This build method now correctly watches the filter/sort providers
-    // and will automatically re-run when their states change.
+    // Wait for a stable session from the new session controller.
+    final session = await ref.watch(sessionControllerProvider.future);
+
+    // If there is no user session, return an empty list.
+    if (session == null) {
+      return [];
+    }
+
+    // Continue with fetching data as before, now that we know a user is logged in.
     final categoryId = ref.watch(itemCategoryFilterProvider);
     final sortType = ref.watch(itemSortProvider);
 

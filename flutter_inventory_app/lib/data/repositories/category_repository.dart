@@ -12,7 +12,7 @@ import 'package:flutter_inventory_app/data/models/category.dart';
 
 // # PROVIDER UNTUK REPOSITORY
 // Provider ini memungkinkan UI atau Service Layer untuk mengakses CategoryRepository.
-final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
+final categoryRepositoryProvider = Provider.autoDispose<CategoryRepository>((ref) {
   final databases = ref.watch(appwriteDatabaseProvider);
   return CategoryRepository(databases);
 });

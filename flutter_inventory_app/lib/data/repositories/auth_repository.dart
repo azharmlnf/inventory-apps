@@ -3,7 +3,7 @@ import 'package:appwrite/models.dart' as models;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
+final authRepositoryProvider = Provider.autoDispose<AuthRepository>((ref) {
   final account = ref.watch(appwriteAccountProvider);
   return AuthRepository(account: account);
 });

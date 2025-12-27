@@ -7,7 +7,7 @@ import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_filter_provider.dart';
 
 /// Provider untuk ItemRepository.
-final itemRepositoryProvider = Provider<ItemRepository>((ref) {
+final itemRepositoryProvider = Provider.autoDispose<ItemRepository>((ref) {
   final databases = ref.watch(appwriteDatabaseProvider);
   final storage = ref.watch(appwriteStorageProvider);
   return ItemRepository(databases, storage);

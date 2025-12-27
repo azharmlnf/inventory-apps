@@ -3,7 +3,7 @@ import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart';
 import 'package:flutter_inventory_app/features/item/pages/item_form_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_inventory_app/features/auth/providers/auth_state_provider.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_inventory_app/features/home/home_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/activity_log_list_page.dart';
 import 'package:flutter_inventory_app/presentation/pages/category_list_page.dart';
@@ -46,10 +46,21 @@ class _MainPageState extends ConsumerState<MainPage> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isPremium = authState.isPremium;
+    // Correctly watch the new session controller for user data
+    final userAsync = ref.watch(sessionControllerProvider);
+    final user = userAsync.value;
+
+    // Derive premium status and email from the user object, with robust parsing.
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false; // Default to false
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
+    final userEmail = user?.email ?? '';
+
     const goldColor = Color(0xFFFFD700);
     
     const neubrutalismAccent = Color(0xFFE84A5F);
@@ -97,9 +108,9 @@ class _MainPageState extends ConsumerState<MainPage> {
                             ),
                       ),
                       const SizedBox(height: 8),
-                      if (authState.user != null)
+                      if (user != null)
                         Text(
-                          authState.user!.email,
+                          userEmail,
                           style: const TextStyle(
                                 color: Colors.black54,
                               ),
@@ -206,8 +217,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                     buttonColor: neubrutalismAccent.withAlpha(50),
                     textColor: neubrutalismAccent,
                     onTap: () {
-                      Navigator.pop(context);
-                      ref.read(authControllerProvider.notifier).signOut();
+                      ref.read(sessionControllerProvider.notifier).logout();
                     },
                   ),
                 ],
