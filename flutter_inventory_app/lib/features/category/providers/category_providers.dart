@@ -1,53 +1,32 @@
 
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/repositories/category_repository.dart';
 import 'package:flutter_inventory_app/domain/services/category_service.dart';
+import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 
-/// Provider untuk CategoryService.
+/// Provider for the stateless CategoryService.
 final categoryServiceProvider = Provider<CategoryService>((ref) {
   final categoryRepository = ref.watch(categoryRepositoryProvider);
-  final account = ref.watch(appwriteAccountProvider);
-  return CategoryService(categoryRepository, account);
+  // No longer depends on the Account provider directly.
+  return CategoryService(categoryRepository);
 });
 
-/// AsyncNotifierProvider untuk mengelola daftar kategori.
-final categoriesProvider = AsyncNotifierProvider<CategoriesNotifier, List<Category>>(() {
-  return CategoriesNotifier();
+/// A provider that fetches categories for a *specific user ID*.
+final categoriesProvider = FutureProvider.autoDispose.family<List<Category>, String>((ref, userId) async {
+  final categoryService = ref.read(categoryServiceProvider);
+  return categoryService.getCategories(userId);
 });
 
-class CategoriesNotifier extends AsyncNotifier<List<Category>> {
-  @override
-  Future<List<Category>> build() async {
-    return _fetchCategories();
-  }
+/// A "bridge" provider that the UI will watch.
+final currentCategoriesProvider = FutureProvider.autoDispose<List<Category>>((ref) async {
+  final session = await ref.watch(sessionControllerProvider.future);
 
-  Future<List<Category>> _fetchCategories() async {
-    final categoryService = ref.read(categoryServiceProvider);
-    return categoryService.getCategories();
+  if (session == null) {
+    return [];
   }
+  
+  return ref.watch(categoriesProvider(session.$id).future);
+});
 
-  Future<void> refreshCategories() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchCategories());
-  }
-
-  Future<void> addCategory(String name) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(categoryServiceProvider).createCategory(name));
-    state = await AsyncValue.guard(() => _fetchCategories());
-  }
-
-  Future<void> updateCategory(String categoryId, String name) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(categoryServiceProvider).updateCategory(categoryId, name));
-    state = await AsyncValue.guard(() => _fetchCategories());
-  }
-
-  Future<void> deleteCategory(String categoryId) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(categoryServiceProvider).deleteCategory(categoryId));
-    state = await AsyncValue.guard(() => _fetchCategories());
-  }
-}

@@ -25,6 +25,26 @@ class Transaction {
     this.note,
   });
 
+  Transaction copyWith({
+    String? id,
+    String? userId,
+    String? itemId,
+    TransactionType? type,
+    int? quantity,
+    DateTime? date,
+    String? note,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      itemId: itemId ?? this.itemId,
+      type: type ?? this.type,
+      quantity: quantity ?? this.quantity,
+      date: date ?? this.date,
+      note: note ?? this.note,
+    );
+  }
+
   /// Factory constructor untuk membuat instance Transaction dari Dokumen Appwrite.
   factory Transaction.fromDocument(appwrite_models.Document document) {
     String extractedItemId;

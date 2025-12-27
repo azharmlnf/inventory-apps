@@ -1,47 +1,25 @@
-import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as appwrite_models;
-import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/data/repositories/transaction_repository.dart';
 
-/// Service Layer untuk mengelola logika bisnis terkait transaksi.
+/// Service Layer for managing business logic related to transactions.
+/// This service is now stateless regarding the user.
 class TransactionService {
   final TransactionRepository _transactionRepository;
   final ItemRepository _itemRepository;
-  final Account _account;
   final ActivityLogService _activityLogService;
 
   TransactionService(
     this._transactionRepository,
     this._itemRepository,
-    this._account,
     this._activityLogService,
   );
 
-  /// Mengambil ID pengguna yang sedang login.
-  Future<String> _getCurrentUserId() async {
-    try {
-      final appwrite_models.User user = await _account.get();
-      return user.$id;
-    } catch (e) {
-      throw Exception('Pengguna tidak login atau sesi tidak valid.');
-    }
-  }
-
-  /// Membuat transaksi baru untuk pengguna yang sedang login.
-  Future<appwrite_models.Document> createTransaction(Transaction transaction) async {
-    final userId = await _getCurrentUserId();
-    final newTransaction = Transaction(
-      id: '', // ID akan dibuat oleh repository
-      userId: userId,
-      itemId: transaction.itemId,
-      type: transaction.type,
-      quantity: transaction.quantity,
-      date: transaction.date,
-      note: transaction.note,
-    );
+  /// Creates a new transaction for a specific user.
+  Future<appwrite_models.Document> createTransaction(String userId, Transaction transaction) async {
+    final newTransaction = transaction.copyWith(userId: userId);
 
     // 1. Create the transaction document
     final doc = await _transactionRepository.createTransaction(newTransaction);
@@ -56,25 +34,13 @@ class TransactionService {
     }
 
     // 3. Update the item's quantity
-    final updatedItem = Item(
-      id: itemToUpdate.id,
-      userId: itemToUpdate.userId,
-      name: itemToUpdate.name,
-      brand: itemToUpdate.brand,
-      description: itemToUpdate.description,
-      quantity: newQuantity, // Updated quantity
-      minQuantity: itemToUpdate.minQuantity,
-      unit: itemToUpdate.unit,
-      purchasePrice: itemToUpdate.purchasePrice,
-      salePrice: itemToUpdate.salePrice,
-      categoryId: itemToUpdate.categoryId,
-      imageId: itemToUpdate.imageId,
-    );
+    final updatedItem = itemToUpdate.copyWith(quantity: newQuantity);
     await _itemRepository.updateItem(updatedItem);
 
     // 4. Record activity
     final action = transaction.type == TransactionType.inType ? 'masuk' : 'keluar';
     await _activityLogService.recordActivity(
+      userId: userId,
       description:
           'Transaksi $action: ${transaction.quantity} ${itemToUpdate.unit} untuk item ${itemToUpdate.name}',
       itemId: transaction.itemId,
@@ -83,14 +49,14 @@ class TransactionService {
     return doc;
   }
 
-  // ... sisa method lainnya tidak berubah ...
-  Future<List<Transaction>> getTransactions({
+  // ... other methods remain the same ...
+  Future<List<Transaction>> getTransactions(
+    String userId, {
     String? itemId,
     TransactionType? type,
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    final userId = await _getCurrentUserId();
     return _transactionRepository.getTransactions(
       userId,
       itemId: itemId,
@@ -133,6 +99,7 @@ class TransactionService {
     
     // 6. Record activity
     await _activityLogService.recordActivity(
+      userId: transaction.userId,
       description: 'Memperbarui transaksi untuk item: ${itemToUpdate.name}',
       itemId: transaction.itemId,
     );
@@ -163,6 +130,7 @@ class TransactionService {
     
     // 6. Record activity
     await _activityLogService.recordActivity(
+      userId: transactionToDelete.userId,
       description: 'Menghapus transaksi untuk item: ${itemToUpdate.name}',
     );
   }

@@ -7,7 +7,6 @@ import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/features/item/providers/item_providers.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -159,65 +158,70 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedItemId == null || _selectedItemId!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Mohon pilih barang.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_selectedItemId == null || _selectedItemId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mohon pilih barang.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final session = ref.read(sessionControllerProvider).value;
+    if (session == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesi tidak valid. Silakan login kembali.')));
+      setState(() => _isLoading = false);
+      return;
+    }
+    final userId = session.$id;
+
+    final isEditMode = widget.transaction != null;
+
+    final transactionData = Transaction(
+      id: widget.transaction?.id ?? '',
+      userId: widget.transaction?.userId ?? userId,
+      itemId: _selectedItemId!,
+      type: _selectedType!,
+      quantity: int.tryParse(_quantityController.text) ?? 1,
+      date: _selectedTransactionDate,
+      note: _noteController.text.isNotEmpty ? _noteController.text.trim() : null,
+    );
+
+    try {
+      if (isEditMode) {
+        await ref.read(transactionServiceProvider).updateTransaction(transactionData);
+      } else {
+        await ref.read(transactionServiceProvider).createTransaction(userId, transactionData);
       }
 
-      setState(() => _isLoading = true);
-
-      final isEditMode = widget.transaction != null;
-
-
-      final newTransaction = Transaction(
-        id: widget.transaction?.id ?? '',
-        userId: widget.transaction?.userId ?? '', // userId will be set by the service
-        itemId: _selectedItemId!, // Ditambahkan '!' karena sudah divalidasi tidak null
-        type: _selectedType!,
-        quantity: int.tryParse(_quantityController.text) ?? 1,
-        date: _selectedTransactionDate,
-        note: _noteController.text.isNotEmpty ? _noteController.text.trim() : null,
-      );
-
-      try {
-        if (isEditMode) {
-          await ref.read(transactionsProvider.notifier).updateTransaction(newTransaction);
-        } else {
-          await ref.read(transactionsProvider.notifier).addTransaction(newTransaction);
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Transaksi berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          ref.invalidate(transactionsProvider); // Invalidate transactionsProvider to refresh the list
-          ref.invalidate(itemsProvider); // Invalidate itemsProvider as item quantities might have changed
-          
-          _showInterstitialAd(() {
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-          });
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transaksi berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        ref.invalidate(currentTransactionsProvider);
+        ref.invalidate(currentItemsProvider); 
+        
+        _showInterstitialAd(() {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -225,7 +229,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.transaction != null;
-    final itemsAsync = ref.watch(itemsProvider);
+    final itemsAsync = ref.watch(currentItemsProvider);
 
     return Scaffold(
       backgroundColor: _neubrutalismBg,

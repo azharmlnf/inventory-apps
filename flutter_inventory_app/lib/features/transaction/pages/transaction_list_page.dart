@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
-import 'package:flutter_inventory_app/features/transaction/providers/transaction_provider.dart';
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
-import 'package:flutter_inventory_app/features/item/providers/item_provider.dart'; // To get item details
+import 'package:flutter_inventory_app/features/item/providers/item_providers.dart'; // To get item details
 import 'package:flutter_inventory_app/features/transaction/pages/transaction_form_page.dart'; // For adding/editing transactions
 import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 import 'package:intl/intl.dart';
@@ -154,8 +152,12 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final transactionsAsyncValue = ref.watch(filteredTransactionsProvider);
-    final itemsAsyncValue = ref.watch(itemProvider); // Watch item provider to get item names
+    // Watch the async provider for loading/error state
+    final transactionsAsyncValue = ref.watch(currentTransactionsProvider);
+    // Watch the sync provider for the filtered/sorted list
+    final filteredTransactions = ref.watch(filteredTransactionsProvider);
+    
+    final itemsAsyncValue = ref.watch(currentItemsProvider); // Watch item provider to get item names
 
     return Scaffold(
       backgroundColor: _neubrutalismBg,
@@ -183,7 +185,6 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
                       NeuIconButton(
                         onPressed: () {
                           ref.read(dateRangeProvider.notifier).state = (start: null, end: null); // Clear date range
-                          ref.refresh(filteredTransactionsProvider); // Refresh
                         },
                         icon: const Icon(Icons.refresh, color: _neubrutalismText),
                         buttonColor: Colors.white,
@@ -297,7 +298,7 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
           ),
           Expanded(
             child: transactionsAsyncValue.when(
-              data: (transactions) {
+              data: (transactions) { // We get the raw list here to check for emptiness
                 if (transactions.isEmpty) {
                   return const Center(
                     child: Text(
@@ -306,15 +307,17 @@ class _TransactionListPageState extends ConsumerState<TransactionListPage> {
                     ),
                   );
                 }
+                // But we display the filtered and sorted list
+                final transactionsToDisplay = filteredTransactions;
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(transactionProvider);
+                    ref.invalidate(currentTransactionsProvider);
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(12.0),
-                    itemCount: transactions.length,
+                    itemCount: transactionsToDisplay.length,
                     itemBuilder: (context, index) {
-                      final transaction = transactions[index];
+                      final transaction = transactionsToDisplay[index];
                       
                       // Find item name from itemsAsyncValue
                       String itemName = 'Item Tidak Ditemukan';

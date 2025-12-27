@@ -95,6 +95,9 @@ class _ReportPageState extends ConsumerState<ReportPage> {
   @override
   Widget build(BuildContext context) {
     final dateRange = ref.watch(dateRangeProvider);
+    // Watch the ASYNC provider for loading/error state
+    final transactionsAsync = ref.watch(currentTransactionsProvider);
+    // Watch the SYNC provider for the filtered/sorted data
     final filteredTransactions = ref.watch(filteredTransactionsProvider);
     
     // Watch dashboard providers for the summary
@@ -134,10 +137,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                     child: NeuTextButton(
                       onPressed: () {
                         final exportService = ref.read(exportServiceProvider);
-                        final allItems = ref.read(allItemsProvider);
-                        allItems.whenData((items) {
-                          exportService.exportItemsToCsv(items);
-                        });
+                        final allItems = ref.read(allItemsProvider).value ?? [];
+                        exportService.exportItemsToCsv(allItems);
                       },
                       text: const Text(
                         'Ekspor Item',
@@ -155,15 +156,12 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                     child: NeuTextButton(
                       onPressed: () {
                         final exportService = ref.read(exportServiceProvider);
-                        final allItems = ref.read(allItemsProvider); // Get all items
-                        filteredTransactions.whenData((transactions) {
-                          allItems.whenData((items) {
-                            final Map<String, String> itemNames = {
-                              for (var item in items) item.id: item.name,
-                            };
-                            exportService.exportTransactionsToCsv(transactions, itemNames);
-                          });
-                        });
+                        final allItems = ref.read(allItemsProvider).value ?? [];
+                        final transactions = ref.read(filteredTransactionsProvider);
+                        final Map<String, String> itemNames = {
+                          for (var item in allItems) item.id: item.name,
+                        };
+                        exportService.exportTransactionsToCsv(transactions, itemNames);
                       },
                       text: const Text(
                         'Ekspor Transaksi',
@@ -240,15 +238,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                     child: InkWell(
                       onTap: () => _selectDate(isStartDate: true),
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
-                            SizedBox(width: 8),
+                            const Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
+                            const SizedBox(width: 8),
                             Text(
                               dateRange.start == null ? 'Mulai' : DateFormat('dd/MM/yy').format(dateRange.start!),
-                              style: TextStyle(color: _neubrutalismText),
+                              style: const TextStyle(color: _neubrutalismText),
                             ),
                           ],
                         ),
@@ -267,15 +265,15 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                     child: InkWell(
                       onTap: () => _selectDate(isStartDate: false),
                       child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
-                            SizedBox(width: 8),
+                            const Icon(Icons.calendar_today, size: 16, color: _neubrutalismText),
+                            const SizedBox(width: 8),
                             Text(
                               dateRange.end == null ? 'Akhir' : DateFormat('dd/MM/yy').format(dateRange.end!),
-                              style: TextStyle(color: _neubrutalismText),
+                              style: const TextStyle(color: _neubrutalismText),
                             ),
                           ],
                         ),
@@ -290,38 +288,43 @@ class _ReportPageState extends ConsumerState<ReportPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: filteredTransactions.when(
-                data: (transactions) {
+              child: transactionsAsync.when(
+                data: (_) { // Data is ignored, we use the filtered provider
+                  final transactions = filteredTransactions;
                   if (transactions.isEmpty) {
                     return const Center(child: Text('Tidak ada transaksi pada rentang tanggal ini.'));
                   }
                   return ListView.builder(
                     itemCount: transactions.length,
                     itemBuilder: (context, index) {
-                                                                                            final transaction = transactions[index];
-                                                                                            String itemName = 'Item Tidak Dikenal';
-                                                                                            allItemsAsync.whenData((allItems) {
-                                                                                                                                                                                                  final item = allItems.firstWhere(
-                                                                                                                                                                                                    (item) => item.id == transaction.itemId,
-                                                                                                                                                                                                    orElse: () => _getDummyItem(),
-                                                                                                                                                                                                  );
-                                                                                                                                                                                                  itemName = item.name;                                                                                            });
-                                                                                            return Padding(
-                                                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                                                              child: NeuContainer(
-                                                                                                borderRadius: BorderRadius.circular(12),
-                                                                                                color: Colors.white,
-                                                                                                borderColor: _neubrutalismBorder,
-                                                                                                borderWidth: _neubrutalismBorderWidth,
-                                                                                                shadowColor: _neubrutalismBorder,
-                                                                                                offset: _neubrutalismShadowOffset,
-                                                                                                child: ListTile(
-                                                                                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                                                                  title: Text(itemName, style: const TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold)),                                                  subtitle: Text('Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}', style: TextStyle(color: _neubrutalismText.withAlpha((255 * 0.7).round()))),
-                                                  trailing: Text(DateFormat('dd/MM/yyyy').format(transaction.date), style: const TextStyle(color: _neubrutalismText)),
-                                                ),
-                                              ),
-                                            );                    },
+                      final transaction = transactions[index];
+                      String itemName = 'Item Tidak Dikenal';
+                      // Safely get item name
+                      final items = allItemsAsync.value ?? [];
+                      try {
+                        itemName = items.firstWhere((item) => item.id == transaction.itemId).name;
+                      } catch (e) {
+                        // Keep default name
+                      }
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: NeuContainer(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          borderColor: _neubrutalismBorder,
+                          borderWidth: _neubrutalismBorderWidth,
+                          shadowColor: _neubrutalismBorder,
+                          offset: _neubrutalismShadowOffset,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            title: Text(itemName, style: const TextStyle(color: _neubrutalismText, fontWeight: FontWeight.bold)),
+                            subtitle: Text('Jumlah: ${transaction.quantity} | Tipe: ${transaction.type.name}', style: TextStyle(color: _neubrutalismText.withAlpha((255 * 0.7).round()))),
+                            trailing: Text(DateFormat('dd/MM/yyyy').format(transaction.date), style: const TextStyle(color: _neubrutalismText)),
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),

@@ -57,39 +57,62 @@ class SubscriptionPage extends ConsumerWidget {
   }
 
   Widget _buildPremiumStatus(BuildContext context, String? subscriptionId) {
-    return Center(
+    const premiumColor = Color(0xFFFBC02D); // A nice gold color
+
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: NeuContainer(
           width: double.infinity,
           borderColor: _neubrutalismBorder,
           shadowColor: _neubrutalismBorder,
-          color: const Color(0x4DFFD700),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.workspace_premium,
-                  size: 80,
-                  color: Color(0xFFFFD700),
+                NeuContainer(
+                  color: premiumColor,
+                  borderRadius: BorderRadius.circular(50),
+                  child: const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: Icon(
+                      Icons.workspace_premium,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Anda Adalah Anggota Premium',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Terima kasih telah mendukung aplikasi ini. Anda kini memiliki akses ke semua fitur premium.',
-                  style: TextStyle(fontSize: 16),
+                Text(
+                  'Terima kasih telah mendukung aplikasi ini. Nikmati semua fitur premium tanpa batas.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: NeuContainer(height: 2, color: _neubrutalismBorder),
+                ),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Keuntungan Anda:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildFeatureRow(Icons.assessment, 'Akses Laporan & Analisis Mendalam'),
+                _buildFeatureRow(Icons.file_download, 'Ekspor Data tanpa batas (CSV)'),
+                _buildFeatureRow(Icons.remove_red_eye_outlined, 'Pengalaman Sepenuhnya Bebas Iklan'),
+                const SizedBox(height: 32),
                 if (subscriptionId != null)
                   Text(
                     'Paket Aktif: $subscriptionId',
@@ -99,6 +122,24 @@ class SubscriptionPage extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.green.shade700, size: 24),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
       ),
     );
   }

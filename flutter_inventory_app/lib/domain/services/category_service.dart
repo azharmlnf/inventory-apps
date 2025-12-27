@@ -1,51 +1,33 @@
-import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
 import 'package:flutter_inventory_app/data/models/category.dart';
 import 'package:flutter_inventory_app/data/repositories/category_repository.dart';
 
-/// Service Layer untuk mengelola operasi bisnis terkait kategori.
-/// Bertanggung jawab untuk berinteraksi dengan CategoryRepository
-/// dan menyediakan logika bisnis tambahan jika diperlukan.
+/// Service Layer for managing business logic related to categories.
+/// This service is now stateless regarding the user.
 class CategoryService {
   final CategoryRepository _categoryRepository;
-  final Account _account;
 
-  CategoryService(this._categoryRepository, this._account);
+  CategoryService(this._categoryRepository);
 
-  /// Mendapatkan ID pengguna yang sedang login.
-  /// Melemparkan exception jika tidak ada pengguna yang login.
-    Future<String> _getCurrentUserId() async {
-      try {
-        final User user = await _account.get();
-        return user.$id;
-      } catch (e) {
-        throw Exception('Pengguna tidak login atau sesi tidak valid.');
-      }
-    }
-
-  /// Membuat kategori baru untuk pengguna yang sedang login.
-  Future<Category> createCategory(String name) async {
-    final userId = await _getCurrentUserId();
+  /// Creates a new category for a specific user.
+  Future<Category> createCategory(String userId, String name) async {
     return _categoryRepository.createCategory(userId: userId, name: name);
   }
 
-  /// Mengambil semua kategori milik pengguna yang sedang login.
-  Future<List<Category>> getCategories() async {
-    final userId = await _getCurrentUserId();
+  /// Fetches all categories belonging to a specific user.
+  Future<List<Category>> getCategories(String userId) async {
     return _categoryRepository.getCategories(userId);
   }
 
-  /// Memperbarui kategori yang sudah ada.
+  /// Updates an existing category.
   Future<Category> updateCategory(String categoryId, String name) async {
-    // Tidak perlu userId di sini karena permissions sudah diatur di Appwrite
-    // dan repository akan menangani update berdasarkan categoryId.
+    // No userId needed here as permissions are handled by Appwrite based on the document.
     return _categoryRepository.updateCategory(categoryId: categoryId, name: name);
   }
 
-  /// Menghapus kategori yang sudah ada.
+  /// Deletes an existing category.
   Future<void> deleteCategory(String categoryId) async {
-    // Tidak perlu userId di sini karena permissions sudah diatur di Appwrite
-    // dan repository akan menangani delete berdasarkan categoryId.
+    // No userId needed here as permissions are handled by Appwrite based on the document.
     return _categoryRepository.deleteCategory(categoryId: categoryId);
   }
 }

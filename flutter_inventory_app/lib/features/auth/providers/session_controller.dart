@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:appwrite/models.dart';
 import 'package:flutter_inventory_app/core/appwrite_provider.dart';
+import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -24,20 +26,25 @@ class SessionController extends _$SessionController {
     await authRepository.signUp(email: email, password: password, name: name);
   }
 
-  Future<void> login(String email, String password) async {
+  Future<bool> login(String email, String password) async {
     state = const AsyncLoading();
-    
     final account = ref.read(appwriteAccountProvider);
+
     try {
       await account.createEmailPasswordSession(
         email: email,
         password: password,
       );
+
       final user = await account.get();
       state = AsyncData(user);
-    } catch (e) {
-      state = AsyncError(e, StackTrace.current);
-      rethrow;
+      return true;
+    } on AppwriteException {
+      state = const AsyncData(null);
+      return false;
+    } catch (_) {
+      state = const AsyncData(null);
+      return false;
     }
   }
 

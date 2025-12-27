@@ -7,26 +7,26 @@ import 'package:flutter_inventory_app/features/item/providers/item_providers.dar
 import 'package:flutter_inventory_app/features/transaction/providers/transaction_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Provider untuk menghitung total jenis barang.
+/// Provider to count total item types.
 final totalItemsCountProvider = Provider<AsyncValue<int>>((ref) {
-  return ref.watch(itemsProvider).whenData((items) => items.length);
+  return ref.watch(currentItemsProvider).whenData((items) => items.length);
 });
 
-/// Provider untuk menghitung total kategori.
+/// Provider to count total categories.
 final totalCategoriesCountProvider = Provider<AsyncValue<int>>((ref) {
-  return ref.watch(categoriesProvider).whenData((categories) => categories.length);
+  return ref.watch(currentCategoriesProvider).whenData((categories) => categories.length);
 });
 
-/// Provider untuk mendapatkan daftar item dengan stok rendah.
+/// Provider to get a list of low-stock items.
 final lowStockItemsProvider = Provider<AsyncValue<List<Item>>>((ref) {
-  return ref.watch(itemsProvider).whenData((items) {
+  return ref.watch(currentItemsProvider).whenData((items) {
     return items.where((item) => item.quantity <= item.minQuantity).toList();
   });
 });
 
-/// Provider untuk menghitung total nilai stok inventaris.
+/// Provider to calculate the total inventory stock value.
 final totalStockValueProvider = Provider<AsyncValue<double>>((ref) {
-  return ref.watch(itemsProvider).whenData((items) {
+  return ref.watch(currentItemsProvider).whenData((items) {
     return items.fold<double>(0.0, (sum, item) {
       final price = item.purchasePrice ?? 0.0;
       return sum + (item.quantity * price);
@@ -34,9 +34,9 @@ final totalStockValueProvider = Provider<AsyncValue<double>>((ref) {
   });
 });
 
-/// Provider untuk mendapatkan transaksi hari ini.
+/// Provider to get transactions made today.
 final transactionsTodayProvider = Provider<AsyncValue<List<Transaction>>>((ref) {
-  return ref.watch(transactionsProvider).whenData((transactions) {
+  return ref.watch(currentTransactionsProvider).whenData((transactions) {
     final now = DateTime.now();
     return transactions.where((transaction) {
       return transaction.date.year == now.year &&
@@ -46,9 +46,9 @@ final transactionsTodayProvider = Provider<AsyncValue<List<Transaction>>>((ref) 
   });
 });
 
-/// Provider untuk mendapatkan transaksi terbaru (misal, 5 transaksi terakhir).
+/// Provider to get the latest transactions (e.g., the last 5).
 final latestTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((ref) {
-  return ref.watch(transactionsProvider).whenData((transactions) {
+  return ref.watch(currentTransactionsProvider).whenData((transactions) {
     // Sort by date descending and take the first 5
     final sortedTransactions = List<Transaction>.from(transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -56,9 +56,9 @@ final latestTransactionsProvider = Provider<AsyncValue<List<Transaction>>>((ref)
   });
 });
 
-/// Provider untuk mendapatkan nama kategori berdasarkan ID.
+/// Provider to get a category name by its ID.
 final categoryNameProvider = Provider.family<AsyncValue<String>, String>((ref, categoryId) {
-  return ref.watch(categoriesProvider).whenData((categories) {
+  return ref.watch(currentCategoriesProvider).whenData((categories) {
     final category = categories.firstWhere(
       (cat) => cat.id == categoryId,
       orElse: () => Category(id: categoryId, userId: '', name: 'Tidak Berkategori'),
@@ -67,14 +67,14 @@ final categoryNameProvider = Provider.family<AsyncValue<String>, String>((ref, c
   });
 });
 
-/// Provider untuk mendapatkan semua item.
+/// Provider to get all items (an alias for currentItemsProvider).
 final allItemsProvider = Provider<AsyncValue<List<Item>>>((ref) {
-  return ref.watch(itemsProvider);
+  return ref.watch(currentItemsProvider);
 });
 
-/// Provider untuk mendapatkan item berdasarkan ID.
+/// Provider to get an item by its ID.
 final itemByIdProvider = Provider.family<AsyncValue<Item?>, String>((ref, itemId) {
-  return ref.watch(itemsProvider).whenData((items) {
+  return ref.watch(currentItemsProvider).whenData((items) {
     try {
       return items.firstWhere((item) => item.id == itemId);
     } catch (e) {
@@ -83,7 +83,7 @@ final itemByIdProvider = Provider.family<AsyncValue<Item?>, String>((ref, itemId
   });
 });
 
-/// Data class untuk menampung data agregasi stok per kategori.
+/// Data class for aggregated stock data per category.
 class CategoryStock {
   final String categoryName;
   final double totalQuantity;
@@ -96,11 +96,14 @@ class CategoryStock {
   });
 }
 
-/// Provider untuk mengagregasi data stok per kategori.
+/// Provider to aggregate stock data by category for charting.
 final stockByCategoryProvider = Provider<AsyncValue<List<CategoryStock>>>((ref) {
   final itemsAsync = ref.watch(allItemsProvider);
-  final categoriesAsync = ref.watch(categoriesProvider);
+  final categoriesAsync = ref.watch(currentCategoriesProvider);
 
+  // This is a complex provider that depends on two other async providers.
+  // A better implementation might use AsyncValue.guard or further composition.
+  // For now, we handle loading and error states manually.
   if (itemsAsync.isLoading || categoriesAsync.isLoading) {
     return const AsyncValue.loading();
   }
@@ -117,18 +120,18 @@ final stockByCategoryProvider = Provider<AsyncValue<List<CategoryStock>>>((ref) 
 
   final Map<String, double> categoryQuantities = {};
 
-  // Inisialisasi map dengan semua kategori yang ada
+  // Initialize map with all existing categories
   for (var category in categories) {
     categoryQuantities[category.id] = 0;
   }
 
-  // Agregasi kuantitas dari setiap item
+  // Aggregate quantities from each item
   for (var item in items) {
     final categoryId = item.categoryId;
     if (categoryId != null && categoryQuantities.containsKey(categoryId)) {
       categoryQuantities[categoryId] = (categoryQuantities[categoryId]!) + item.quantity;
     } else {
-      // Handle item tanpa kategori
+      // Handle items without a category
       categoryQuantities['uncategorized'] = (categoryQuantities['uncategorized'] ?? 0) + item.quantity;
     }
   }

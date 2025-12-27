@@ -29,27 +29,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       setState(() {
         _isLoading = true;
       });
-      try {
-        await ref.read(sessionControllerProvider.notifier).login(
-              _emailController.text.trim(),
-              _passwordController.text.trim(),
-            );
-        // Navigation will be handled by the AuthChecker
-      } catch (e) {
-        if (mounted) {
+
+      final success = await ref.read(sessionControllerProvider.notifier).login(
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+
+      if (mounted) {
+        if (!success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString()),
+            const SnackBar(
+              content: Text('Login gagal. Periksa kembali email dan password Anda.'),
               backgroundColor: Colors.red,
             ),
           );
         }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        // Navigation is handled by AuthChecker, no need to do anything on success.
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -95,7 +96,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        hintText: 'Email',
+                        labelText: 'Email',
                         border: InputBorder.none,
                         icon: Icon(Icons.email_outlined),
                       ),
@@ -121,7 +122,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: TextFormField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
-                        hintText: 'Password',
+                        labelText: 'Password',
                         border: InputBorder.none,
                         icon: Icon(Icons.lock_outline),
                       ),

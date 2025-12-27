@@ -31,6 +31,7 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
     
     // Fetch item data with all available parameters.
     return ref.read(itemServiceProvider).getItems(
+          session.$id,
           searchQuery: searchQuery,
           categoryId: categoryFilter,
           sortType: sortType,
@@ -40,12 +41,15 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   /// Menambahkan item baru.
   Future<void> addItem(Item item, {String? imagePath}) async {
     state = const AsyncValue.loading();
+    final session = await ref.read(sessionControllerProvider.future);
+    if (session == null) throw Exception("User not logged in");
+
     state = await AsyncValue.guard(() async {
-      await ref.read(itemServiceProvider).createItem(item, imagePath: imagePath);
-      // Invalidate provider agar data di-refresh dan menampilkan item baru.
+      await ref.read(itemServiceProvider).createItem(session.$id, item, imagePath: imagePath);
+      // Invalidate provider to refresh and show the new item.
       ref.invalidateSelf();
-      // Tunggu data baru selesai di-load sebelum mengembalikan list.
-      return future;
+      // await the new future
+      return await future;
     });
   }
 
@@ -90,21 +94,25 @@ class ItemNotifier extends AsyncNotifier<List<Item>> {
   /// Menghapus item.
   Future<void> deleteItem(String itemId) async {
     state = const AsyncValue.loading();
+    final session = await ref.read(sessionControllerProvider.future);
+    if (session == null) throw Exception("User not logged in");
+    
     state = await AsyncValue.guard(() async {
-      // Ambil nama item dari state saat ini sebelum menghapus.
+      // Get the item name from the current state before deleting.
       final items = state.value ?? [];
       final itemToDelete = items.firstWhere(
         (item) => item.id == itemId,
-        orElse: () => throw Exception('Item tidak ditemukan untuk dihapus.'),
+        orElse: () => throw Exception('Item not found for deletion.'),
       );
 
       await ref.read(itemServiceProvider).deleteItem(
+            session.$id,
             itemId,
             itemToDelete.name,
             imageId: itemToDelete.imageId,
           );
       ref.invalidateSelf();
-      return future;
+      return await future;
     });
   }
 }

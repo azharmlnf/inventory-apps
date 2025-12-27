@@ -104,7 +104,7 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsyncValue = ref.watch(categoriesProvider);
+    final categoriesAsyncValue = ref.watch(currentCategoriesProvider);
 
     return Scaffold(
       backgroundColor: _neubrutalismBg,
@@ -182,7 +182,9 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () => ref.read(categoriesProvider.notifier).refreshCategories(),
+                  onRefresh: () async {
+                    ref.invalidate(currentCategoriesProvider);
+                  },
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: filteredCategories.length,
@@ -334,8 +336,17 @@ class _CategoryListPageState extends ConsumerState<CategoryListPage> {
                 enableAnimation: true,
                 onPressed: () async {
                   Navigator.pop(dialogContext);
-                  await ref.read(categoriesProvider.notifier).deleteCategory(category.id);
-                  _showInterstitialAd(() {});
+                  try {
+                    await ref.read(categoryServiceProvider).deleteCategory(category.id);
+                    ref.invalidate(currentCategoriesProvider);
+                    _showInterstitialAd(() {});
+                  } catch (e) {
+                    if(mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal menghapus: ${e.toString()}'))
+                      );
+                    }
+                  }
                 },
                 buttonColor: _neubrutalismAccent,
                 borderColor: _neubrutalismBorder,
@@ -385,17 +396,35 @@ class __CategoryFormContentState extends ConsumerState<_CategoryFormContent> {
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       final navigator = Navigator.of(context);
-      final future = _isEditing
-? ref.read(categoriesProvider.notifier).updateCategory(widget.category!.id, _controller.text.trim())
-          : ref.read(categoriesProvider.notifier).addCategory(_controller.text.trim());
+      final session = ref.read(sessionControllerProvider).value;
+      if (session == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sesi tidak valid. Mohon login kembali.'))
+        );
+        return;
+      }
 
-      await future;
-
-      widget.showInterstitialAd(() {
-        if (mounted) {
-          navigator.pop();
+      try {
+        if (_isEditing) {
+          await ref.read(categoryServiceProvider).updateCategory(widget.category!.id, _controller.text.trim());
+        } else {
+          await ref.read(categoryServiceProvider).createCategory(session.$id, _controller.text.trim());
         }
-      });
+
+        ref.invalidate(currentCategoriesProvider);
+        
+        widget.showInterstitialAd(() {
+          if (mounted) {
+            navigator.pop();
+          }
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal menyimpan: ${e.toString()}'))
+          );
+        }
+      }
     }
   }
 

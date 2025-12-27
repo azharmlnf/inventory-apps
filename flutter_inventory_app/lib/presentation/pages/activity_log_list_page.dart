@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_inventory_app/features/activity/providers/activity_providers.dart';
+import 'package:flutter_inventory_app/features/activity/providers/activity_log_providers.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_inventory_app/domain/services/ad_service.dart';
 import 'package:neubrutalism_ui/neubrutalism_ui.dart';
 
@@ -42,7 +41,14 @@ class _ActivityLogListPageState extends ConsumerState<ActivityLogListPage> {
 
   void _loadBannerAd() {
     final user = ref.read(sessionControllerProvider).value;
-    final isPremium = user?.prefs.data['isPremium'] as bool? ?? false;
+    
+    final dynamic premiumValue = user?.prefs.data['isPremium'];
+    bool isPremium = false;
+    if (premiumValue is bool) {
+      isPremium = premiumValue;
+    } else if (premiumValue is String) {
+      isPremium = premiumValue.toLowerCase() == 'true';
+    }
 
     if (isPremium) {
       return;
@@ -75,7 +81,7 @@ class _ActivityLogListPageState extends ConsumerState<ActivityLogListPage> {
   
   @override
   Widget build(BuildContext context) {
-    final activityLogsAsync = ref.watch(activityLogsProvider);
+    final activityLogsAsync = ref.watch(currentActivityLogsProvider);
 
     return Scaffold(
       backgroundColor: _neubrutalismBg,
@@ -102,7 +108,7 @@ class _ActivityLogListPageState extends ConsumerState<ActivityLogListPage> {
                 }
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(activityLogsProvider);
+                    ref.invalidate(currentActivityLogsProvider);
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),

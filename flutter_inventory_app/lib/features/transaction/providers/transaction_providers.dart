@@ -1,13 +1,13 @@
-import 'package:flutter_inventory_app/domain/services/transaction_service.dart';
 import 'package:flutter_inventory_app/data/models/transaction.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 import 'package:flutter_inventory_app/data/repositories/transaction_repository.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
-import 'package:flutter_inventory_app/domain/services/ad_service.dart';
+import 'package:flutter_inventory_app/domain/services/transaction_service.dart';
 import 'package:flutter_inventory_app/features/auth/providers/session_controller.dart';
-import 'package:flutter_inventory_app/core/appwrite_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_inventory_app/core/appwrite_provider.dart';
+
 
 final dateRangeProvider = StateProvider<({DateTime? start, DateTime? end})>((ref) {
   return (start: null, end: null);
@@ -27,19 +27,52 @@ final transactionSortProvider = StateProvider<TransactionSortType>((ref) {
   return TransactionSortType.dateDesc; // Default sort
 });
 
-final filteredTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
-  final transactionService = ref.watch(transactionServiceProvider);
+/// Provider for the stateless TransactionService.
+final transactionServiceProvider = Provider<TransactionService>((ref) {
+  final transactionRepository = ref.watch(transactionRepositoryProvider);
+  final itemRepository = ref.watch(itemRepositoryProvider);
+  final activityLogService = ref.watch(activityLogServiceProvider);
+  // No longer depends on Account.
+  return TransactionService(transactionRepository, itemRepository, activityLogService);
+});
+
+/// A provider that fetches transactions for a *specific user ID*.
+final transactionsProvider = FutureProvider.autoDispose.family<List<Transaction>, String>((ref, userId) async {
+  final transactionService = ref.read(transactionServiceProvider);
   final range = ref.watch(dateRangeProvider);
-  final sortType = ref.watch(transactionSortProvider);
-
-  debugPrint('Filtering transactions by date range: Start=${range.start}, End=${range.end}');
-
-  final transactions = await transactionService.getTransactions(
+  return transactionService.getTransactions(
+    userId,
     startDate: range.start,
     endDate: range.end,
   );
+});
 
-  transactions.sort((a, b) {
+/// A "bridge" provider that the UI will watch.
+final currentTransactionsProvider = FutureProvider.autoDispose<List<Transaction>>((ref) async {
+  final session = await ref.watch(sessionControllerProvider.future);
+  if (session == null) {
+    return [];
+  }
+  return ref.watch(transactionsProvider(session.$id).future);
+});
+
+
+/// This provider now depends on the reactive `currentTransactionsProvider`
+/// and will filter its results.
+final filteredTransactionsProvider = Provider.autoDispose<List<Transaction>>((ref) {
+  final transactionsAsync = ref.watch(currentTransactionsProvider);
+  final sortType = ref.watch(transactionSortProvider);
+
+  // Use .when to safely access the data, providing a default empty list for loading/error states.
+  final transactions = transactionsAsync.when(
+    data: (data) => data,
+    loading: () => [],
+    error: (e, s) => [],
+  );
+
+  // Sort the already fetched and filtered-by-date data.
+  final sortedTransactions = List<Transaction>.from(transactions);
+  sortedTransactions.sort((a, b) {
     switch (sortType) {
       case TransactionSortType.dateAsc:
         return a.date.compareTo(b.date);
@@ -52,102 +85,5 @@ final filteredTransactionsProvider = FutureProvider<List<Transaction>>((ref) asy
     }
   });
 
-  return transactions;
+  return sortedTransactions;
 });
-
-/// Provider untuk TransactionService.
-final transactionServiceProvider = Provider<TransactionService>((ref) {
-  final transactionRepository = ref.watch(transactionRepositoryProvider);
-  final itemRepository = ref.watch(itemRepositoryProvider);
-  final account = ref.watch(appwriteAccountProvider);
-  final activityLogService = ref.watch(activityLogServiceProvider);
-  return TransactionService(transactionRepository, itemRepository, account, activityLogService);
-});
-
-/// AsyncNotifierProvider untuk mengelola daftar transaksi.
-final transactionsProvider = AsyncNotifierProvider<TransactionsNotifier, List<Transaction>>(() {
-  return TransactionsNotifier();
-});
-
-class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
-  @override
-  Future<List<Transaction>> build() async {
-    return _fetchTransactions();
-  }
-
-  Future<List<Transaction>> _fetchTransactions() async {
-    final transactionService = ref.read(transactionServiceProvider);
-    final range = ref.read(dateRangeProvider); // Get the current date range
-    return transactionService.getTransactions(
-      startDate: range.start,
-      endDate: range.end,
-    );
-  }
-
-  Future<void> refreshTransactions() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchTransactions());
-  }
-
-  Future<void> addTransaction(Transaction transaction) async {
-    // Correctly check premium status from sessionControllerProvider
-    final user = ref.read(sessionControllerProvider).value;
-    
-    final dynamic premiumValue = user?.prefs.data['isPremium'];
-    bool isPremium = false;
-    if (premiumValue is bool) {
-      isPremium = premiumValue;
-    } else if (premiumValue is String) {
-      isPremium = premiumValue.toLowerCase() == 'true';
-    }
-
-    // Show interstitial ad if user is not premium
-    if (!isPremium) {
-      ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
-    }
-  }
-
-  Future<void> updateTransaction(Transaction transaction) async {
-    state = const AsyncValue.loading();
-    await ref.read(transactionServiceProvider).updateTransaction(transaction);
-    state = await AsyncValue.guard(() => _fetchTransactions());
-
-    // Correctly check premium status from sessionControllerProvider
-    final user = ref.read(sessionControllerProvider).value;
-    
-    final dynamic premiumValue = user?.prefs.data['isPremium'];
-    bool isPremium = false;
-    if (premiumValue is bool) {
-      isPremium = premiumValue;
-    } else if (premiumValue is String) {
-      isPremium = premiumValue.toLowerCase() == 'true';
-    }
-
-    // Show interstitial ad if user is not premium
-    if (!isPremium) {
-      ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
-    }
-  }
-
-  Future<void> deleteTransaction(String transactionId) async {
-    state = const AsyncValue.loading();
-    await AsyncValue.guard(() => ref.read(transactionServiceProvider).deleteTransaction(transactionId));
-    state = await AsyncValue.guard(() => _fetchTransactions());
-    
-    // Correctly check premium status from sessionControllerProvider
-    final user = ref.read(sessionControllerProvider).value;
-    
-    final dynamic premiumValue = user?.prefs.data['isPremium'];
-    bool isPremium = false;
-    if (premiumValue is bool) {
-      isPremium = premiumValue;
-    } else if (premiumValue is String) {
-      isPremium = premiumValue.toLowerCase() == 'true';
-    }
-
-    // Show interstitial ad if user is not premium
-    if (!isPremium) {
-      ref.read(adServiceProvider).createInterstitialAd(onAdLoaded: (ad) => ad.show());
-    }
-  }
-}

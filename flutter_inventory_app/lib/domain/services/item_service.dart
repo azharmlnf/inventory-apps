@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
 import 'package:flutter_inventory_app/domain/services/activity_log_service.dart';
 import 'package:flutter_inventory_app/domain/services/notification_service.dart';
@@ -8,33 +5,23 @@ import 'package:flutter_inventory_app/features/item/providers/item_filter_provid
 import 'package:flutter_inventory_app/data/models/item.dart';
 import 'package:flutter_inventory_app/data/repositories/item_repository.dart';
 
-/// Service Layer untuk mengelola logika bisnis terkait item.
+/// Service Layer for managing business logic related to items.
+/// This service is now stateless regarding the user.
 class ItemService {
   final ItemRepository _itemRepository;
-  final Account _account;
   final ActivityLogService _activityLogService;
   final NotificationService _notificationService;
 
-  ItemService(this._itemRepository, this._account, this._activityLogService,
-      this._notificationService);
+  ItemService(this._itemRepository, this._activityLogService, this._notificationService);
 
-  /// Mengambil ID pengguna yang sedang login.
-  Future<String> _getCurrentUserId() async {
-    try {
-      final User user = await _account.get();
-      return user.$id;
-    } catch (e) {
-      throw Exception('Pengguna tidak login atau sesi tidak valid.');
-    }
-  }
-
-  /// Mengambil semua item milik pengguna yang sedang login, dengan opsi pencarian, filter, dan sortir.
-  Future<List<Item>> getItems({
+  /// Fetches all items for a specific user, with optional search, filter, and sort.
+  Future<List<Item>> getItems(
+    String userId, {
     String? searchQuery,
     String? categoryId,
     ItemSortType? sortType,
   }) async {
-    final userId = await _getCurrentUserId();
+    // The userId is now passed directly to the repository.
     return _itemRepository.getItems(
       userId,
       searchQuery: searchQuery,
@@ -52,18 +39,11 @@ class ItemService {
     }
   }
 
-  /// Membuat item baru untuk pengguna yang sedang login.
-  Future<Document> createItem(Item item, {String? imagePath}) async {
-    final userId = await _getCurrentUserId();
+  /// Creates a new item for a specific user.
+  Future<Document> createItem(String userId, Item item, {String? imagePath}) async {
     String? imageId;
 
-    // Cek duplikasi nama item
-    if (await itemExists(name: item.name)) {
-      // Di service, kita bisa melempar exception atau handle sesuai kebutuhan
-      // UI akan menangani konfirmasi dari user.
-    }
-
-    // Upload gambar jika ada
+    // Upload image if provided
     if (imagePath != null) {
       final uploadedFile = await _itemRepository.uploadItemImage(imagePath);
       imageId = uploadedFile.$id;
@@ -76,6 +56,7 @@ class ItemService {
 
     // Record activity
     await _activityLogService.recordActivity(
+      userId: userId,
       description: 'Membuat item baru: ${item.name}',
       itemId: doc.$id,
     );
@@ -83,22 +64,22 @@ class ItemService {
     return doc;
   }
 
-  /// Memperbarui item yang sudah ada.
+  /// Updates an existing item. The user ID from the original item is preserved.
   Future<Document> updateItem(Item item, {String? imagePath}) async {
     String? newImageId;
 
-    // Jika ada gambar baru yang di-upload
+    // If a new image is uploaded
     if (imagePath != null) {
       final uploadedFile = await _itemRepository.uploadItemImage(imagePath);
       newImageId = uploadedFile.$id;
 
-      // Hapus gambar lama jika ada
+      // Delete the old image if it exists
       if (item.imageId != null && item.imageId!.isNotEmpty) {
         await _itemRepository.deleteItemImage(item.imageId!);
       }
     }
 
-    // Buat item yang diperbarui dengan imageId baru (jika ada)
+    // Create the updated item with the new imageId (if any)
     final updatedItem = item.copyWith(imageId: newImageId ?? item.imageId);
 
     final doc = await _itemRepository.updateItem(updatedItem);
@@ -106,6 +87,7 @@ class ItemService {
 
     // Record activity
     await _activityLogService.recordActivity(
+      userId: item.userId,
       description: 'Memperbarui item: ${item.name}',
       itemId: item.id,
     );
@@ -113,24 +95,24 @@ class ItemService {
     return doc;
   }
 
-  /// Menghapus item.
-  Future<void> deleteItem(String itemId, String itemName, {String? imageId}) async {
+  /// Deletes an item.
+  Future<void> deleteItem(String userId, String itemId, String itemName, {String? imageId}) async {
     await _itemRepository.deleteItem(itemId, imageId: imageId);
 
     // Record activity
     await _activityLogService.recordActivity(
+      userId: userId,
       description: 'Menghapus item: $itemName',
       itemId: itemId,
     );
   }
 
-  /// Memeriksa apakah item dengan nama yang sama sudah ada.
-  Future<bool> itemExists({required String name}) async {
-    final userId = await _getCurrentUserId();
+  /// Checks if an item with the same name already exists for a specific user.
+  Future<bool> itemExists({required String name, required String userId}) async {
     return _itemRepository.itemExists(name: name, userId: userId);
   }
 
-  /// Mendapatkan URL gambar dari repository.
+  /// Gets the image URL from the repository.
   String? getImageUrl(String? imageId) {
     if (imageId == null || imageId.isEmpty) return null;
     return _itemRepository.getItemImageUrl(imageId);

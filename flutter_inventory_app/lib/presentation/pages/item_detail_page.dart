@@ -20,17 +20,13 @@ class ItemDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoryName = ref.watch(categoriesProvider).when(
-          data: (categories) {
-            try {
-              return categories.firstWhere((cat) => cat.id == item.categoryId).name;
-            } catch (e) {
-              return 'Tidak Berkategori';
-            }
-          },
-          loading: () => '...',
-          error: (e, s) => 'Error',
-        );
+    final categoryAsync = ref.watch(currentCategoriesProvider).whenData((categories) {
+      try {
+        return categories.firstWhere((cat) => cat.id == item.categoryId);
+      } catch (e) {
+        return null;
+      }
+    });
 
     final imageUrl = item.imageId != null
         ? ref.read(itemServiceProvider).getImageUrl(item.imageId!)
@@ -77,7 +73,11 @@ class ItemDetailPage extends ConsumerWidget {
                 _buildDetailRow(context, 'Merek', item.brand!),
               if (item.description != null && item.description!.isNotEmpty)
                 _buildDetailRow(context, 'Deskripsi', item.description!),
-              _buildDetailRow(context, 'Kategori', categoryName),
+              categoryAsync.when(
+                data: (category) => _buildDetailRow(context, 'Kategori', category?.name ?? 'Tidak Berkategori'),
+                loading: () => _buildDetailRow(context, 'Kategori', 'Memuat...'),
+                error: (e, s) => _buildDetailRow(context, 'Kategori', 'Error'),
+              ),
             ],
           ),
           const SizedBox(height: 16),

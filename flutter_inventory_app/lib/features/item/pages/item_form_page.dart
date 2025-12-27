@@ -176,52 +176,56 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      final unitValue = _selectedUnit == 'Lainnya...' ? _manualUnitController.text.trim() : _selectedUnit;
-      if (unitValue.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unit manual tidak boleh kosong.'), backgroundColor: Colors.red));
-        return;
-      }
-      
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
+    final unitValue = _selectedUnit == 'Lainnya...' ? _manualUnitController.text.trim() : _selectedUnit;
+    if (unitValue.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unit manual tidak boleh kosong.'), backgroundColor: Colors.red));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final session = ref.read(sessionControllerProvider).value;
+    if (session == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesi tidak valid. Silakan login kembali.')));
+      setState(() => _isLoading = false);
+      return;
+    }
+    final userId = session.$id;
+
+    try {
       final isEditMode = widget.item != null;
       final itemName = _nameController.text.trim();
-      bool shouldContinue = true;
 
+      // Check for duplicates
       if (!isEditMode || (isEditMode && itemName != widget.item!.name)) {
-        final exists = await ref.read(itemServiceProvider).itemExists(name: itemName);
+        final exists = await ref.read(itemServiceProvider).itemExists(name: itemName, userId: userId);
         if (mounted && exists) {
           final continueSave = await showDialog<bool>(
             context: context,
-            builder: (context) => NeuContainer(
-              color: _neubrutalismBg,
-              borderColor: _neubrutalismBorder,
-              shadowColor: _neubrutalismBorder,
-              borderRadius: BorderRadius.circular(12),
-              child: AlertDialog(
-                elevation: 0,
-                backgroundColor: _neubrutalismBg,
-                title: const Text('Barang Sudah Ada', style: TextStyle(fontWeight: FontWeight.bold)),
-                content: Text('Barang dengan nama "$itemName" sudah ada. Tetap simpan?'),
-                actions: [
-                  NeuTextButton(onPressed: () => Navigator.of(context).pop(false), text: const Text("Batal"), buttonColor: Colors.white, borderColor: _neubrutalismBorder, shadowColor: _neubrutalismBorder, enableAnimation: true),
-                  NeuTextButton(onPressed: () => Navigator.of(context).pop(true), text: const Text("Ya, Tetap Simpan"), buttonColor: _neubrutalismAccent, borderColor: _neubrutalismBorder, shadowColor: _neubrutalismBorder, enableAnimation: true),
-                ],
-              ),
+            builder: (context) => AlertDialog(
+              title: const Text('Barang Sudah Ada'),
+              content: Text('Barang dengan nama "$itemName" sudah ada. Anda yakin ingin tetap menyimpannya?'),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+                ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Ya, Tetap Simpan')),
+              ],
             ),
           );
-          shouldContinue = continueSave ?? false;
+          if (continueSave != true) {
+            setState(() => _isLoading = false);
+            return;
+          }
         }
       }
 
-      if (!shouldContinue) {
-        setState(() => _isLoading = false);
-        return;
-      }
-      
       final itemData = Item(
-        id: widget.item?.id ?? '', userId: widget.item?.userId ?? '', name: itemName,
+        id: widget.item?.id ?? '',
+        userId: widget.item?.userId ?? userId, // Ensure userId is set
+        name: itemName,
         barcode: _barcodeController.text.isNotEmpty ? _barcodeController.text.trim() : null,
         brand: _brandController.text.isNotEmpty ? _brandController.text.trim() : null,
         description: _descriptionController.text.trim(),
@@ -230,29 +234,33 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         unit: unitValue,
         purchasePrice: double.tryParse(_purchasePriceController.text),
         salePrice: double.tryParse(_salePriceController.text),
-        categoryId: _selectedCategoryId, imageId: widget.item?.imageId,
+        categoryId: _selectedCategoryId,
+        imageId: widget.item?.imageId,
       );
 
-      try {
-        if (isEditMode) {
-          await ref.read(itemServiceProvider).updateItem(itemData, imagePath: _imageFile?.path);
-        } else {
-          await ref.read(itemServiceProvider).createItem(itemData, imagePath: _imageFile?.path);
-        }
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text('Barang berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'), backgroundColor: Colors.green,));
-          ref.invalidate(itemsProvider);
-          _showAdAndPop();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')));
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+      if (isEditMode) {
+        await ref.read(itemServiceProvider).updateItem(itemData, imagePath: _imageFile?.path);
+      } else {
+        await ref.read(itemServiceProvider).createItem(userId, itemData, imagePath: _imageFile?.path);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barang berhasil ${isEditMode ? 'diperbarui' : 'ditambahkan'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        ref.invalidate(currentItemsProvider);
+        _showAdAndPop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -278,7 +286,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEditMode = widget.item != null;
-    final categoriesAsync = ref.watch(categoriesProvider);
+    final categoriesAsync = ref.watch(currentCategoriesProvider);
 
     return Scaffold(
       backgroundColor: _neubrutalismBg,
@@ -299,18 +307,18 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                   children: [
                     _buildImagePicker(),
                     const SizedBox(height: 24),
-                    _buildTextField(_nameController, 'Nama Barang (Misal: Kopi Robusta)', 'Nama tidak boleh kosong'),
-                    _buildTextField(_barcodeController, 'Barcode (Opsional, bisa di-scan)', null),
-                    _buildTextField(_brandController, 'Merek (Opsional, misal: Kapal Api)', null),
-                    _buildTextField(_descriptionController, 'Deskripsi/Catatan (Opsional)', null, maxLines: 3),
+                    _buildTextField(_nameController, 'Nama Barang', 'Nama tidak boleh kosong'),
+                    _buildTextField(_barcodeController, 'Barcode', null),
+                    _buildTextField(_brandController, 'Merek', null),
+                    _buildTextField(_descriptionController, 'Deskripsi', null, maxLines: 3),
                     _buildUnitDropdown(), // Changed to dropdown
                     if (_selectedUnit == 'Lainnya...')
                       _buildTextField(_manualUnitController, 'Masukkan Satuan Manual', 'Unit manual tidak boleh kosong'),
                     Row(
                       children: [
-                        Expanded(child: _buildNumericField(_quantityController, 'Jumlah Stok Awal')),
+                        Expanded(child: _buildNumericField(_quantityController, 'Jumlah Stok Saat Ini')),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Stok Rendah')),
+                        Expanded(child: _buildNumericField(_minQuantityController, 'Batas Minimum Notifikasi Stok')),
                       ],
                     ),
                     Row(

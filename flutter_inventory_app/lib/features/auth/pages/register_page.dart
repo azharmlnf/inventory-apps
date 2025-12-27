@@ -111,7 +111,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     child: TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        hintText: 'Nama Lengkap',
+                        labelText: 'Nama Lengkap',
                         border: InputBorder.none,
                         icon: Icon(Icons.person_outline),
                       ),
@@ -136,7 +136,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     child: TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        hintText: 'Email',
+                        labelText: 'Email',
                         border: InputBorder.none,
                         icon: Icon(Icons.email_outlined),
                       ),
@@ -162,7 +162,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     child: TextFormField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
-                        hintText: 'Password',
+                        labelText: 'Password',
                         border: InputBorder.none,
                         icon: Icon(Icons.lock_outline),
                       ),

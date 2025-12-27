@@ -85,7 +85,7 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final itemsAsyncValue = ref.watch(itemsProvider);
+    final itemsAsyncValue = ref.watch(currentItemsProvider);
     final categoryFilter = ref.watch(itemCategoryFilterProvider);
     final searchQuery = ref.watch(itemSearchQueryProvider);
 
@@ -109,7 +109,7 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(itemsProvider),
+                  onRefresh: () async => ref.invalidate(currentItemsProvider),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -268,7 +268,7 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
   }
       
   void _showFilterDialog(BuildContext context, WidgetRef ref) {
-    final categoriesAsync = ref.watch(categoriesProvider);
+    final categoriesAsync = ref.watch(currentCategoriesProvider);
     final currentFilter = ref.read(itemCategoryFilterProvider);
   
     showDialog(
@@ -361,8 +361,18 @@ class _ItemListPageState extends ConsumerState<ItemListPage> {
             NeuTextButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop(); 
+                final session = ref.read(sessionControllerProvider).value;
+                if (session == null) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sesi tidak valid. Tidak bisa menghapus item.'), backgroundColor: Colors.red),
+                    );
+                  }
+                  return;
+                }
                 try {
-                  await ref.read(itemsProvider.notifier).deleteItem(item);
+                  await ref.read(itemServiceProvider).deleteItem(session.$id, item.id, item.name, imageId: item.imageId);
+                  ref.invalidate(currentItemsProvider);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('"${item.name}" berhasil dihapus.'), backgroundColor: Colors.green),

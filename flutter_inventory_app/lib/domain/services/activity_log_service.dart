@@ -1,42 +1,31 @@
 import 'package:flutter_inventory_app/data/repositories/activity_log_repository.dart';
-import 'package:flutter_inventory_app/data/repositories/auth_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/activity_log.dart' as domain;
 
 final activityLogServiceProvider = Provider<ActivityLogService>((ref) {
   final activityLogRepository = ref.watch(activityLogRepositoryProvider);
-  final authRepository = ref.watch(authRepositoryProvider);
-  return ActivityLogService(activityLogRepository, authRepository);
+  return ActivityLogService(activityLogRepository);
 });
 
 class ActivityLogService {
   final ActivityLogRepository _activityLogRepository;
-  final AuthRepository _authRepository;
 
-  ActivityLogService(this._activityLogRepository, this._authRepository);
+  ActivityLogService(this._activityLogRepository);
 
   Future<void> recordActivity({
+    required String userId,
     required String description,
     String? itemId,
   }) async {
-    final user = await _authRepository.getCurrentUser();
-    if (user == null) {
-      throw Exception("User not logged in, cannot record activity.");
-    }
     await _activityLogRepository.createActivityLog(
-      userId: user.$id,
+      userId: userId,
       description: description,
       itemId: itemId,
     );
   }
 
-  Future<List<domain.ActivityLog>> getLogs() async {
-    final user = await _authRepository.getCurrentUser();
-    if (user == null) {
-      throw Exception("User not logged in");
-    }
-
-    final dataModels = await _activityLogRepository.getActivityLogs(user.$id);
+  Future<List<domain.ActivityLog>> getLogs(String userId) async {
+    final dataModels = await _activityLogRepository.getActivityLogs(userId);
     
     return dataModels
         .map((e) => domain.ActivityLog(
